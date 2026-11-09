@@ -486,29 +486,50 @@
     // REGISTRATION
     document.getElementById("registerForm").addEventListener("submit", async event => {
       event.preventDefault();
+
+      const form = event.currentTarget;
       const message = document.getElementById("authMessage");
-      const button = event.currentTarget.querySelector('button[type="submit"]');
+      const button = form.querySelector('button[type="submit"]');
+
       button.disabled = true;
       message.textContent = "Gumagawa ng account...";
 
       try {
         const email = document.getElementById("registerEmail").value.trim();
         const password = document.getElementById("registerPassword").value;
-        const { data, error } = await pinoyMartSupabase.auth.signUp({ email, password });
+        const selectedRole = document.getElementById("registerRole").value;
+
+        if (!["buyer", "seller"].includes(selectedRole)) {
+          throw new Error("Pumili ng tamang uri ng account.");
+        }
+
+        const { data, error } = await pinoyMartSupabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              requested_role: selectedRole
+            }
+          }
+        });
+
         if (error) throw error;
 
         if (data.session) {
-          message.textContent = "Matagumpay ang registration at naka-login ka na.";
+          message.textContent =
+            "Matagumpay ang registration. Susuriin ang account role bago buksan ang dashboard.";
           await refreshAccount();
         } else {
-          message.textContent = "Nagawa ang registration. Tingnan ang email mo at kumpirmahin ang account kung may ipinadalang confirmation link. Pagkatapos, mag-login.";
+          message.textContent =
+            "Nagawa ang registration. Kumpirmahin ang email kung may ipinadalang link, pagkatapos ay mag-login.";
         }
-     if (event.currentTarget && typeof event.currentTarget.reset === "function") {
-  event.currentTarget.reset();
-}
+
+        form.reset();
       } catch (error) {
-        console.error(error);
-        message.textContent = "Hindi nagtagumpay ang registration: " + (error.message || "Pakisubukan muli.");
+        console.error("Registration error:", error);
+        message.textContent =
+          "Hindi nagtagumpay ang registration: " +
+          (error.message || "Pakisubukan muli.");
       } finally {
         button.disabled = false;
       }
