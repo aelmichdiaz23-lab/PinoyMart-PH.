@@ -761,7 +761,7 @@
 
         message.textContent =
           "Naipasa ang produkto at naghihintay ng admin approval. Hindi pa ito nakikita sa shop.";
-        form.reset();
+        document.getElementById("productForm")?.reset();
         document.getElementById("productStock").value = "1";
         await loadSellerProducts();
       } catch (error) {
