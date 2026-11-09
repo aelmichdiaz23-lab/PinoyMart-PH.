@@ -1073,11 +1073,13 @@ if (!itemId || !select) {
       }
     }
 
+   
     // CHECKOUT
     document.getElementById("orderForm").addEventListener("submit", async event => {
       event.preventDefault();
 
       if (orderInProgress) return;
+
       if (!cart.length) {
         alert("Walang produkto sa cart.");
         return;
@@ -1092,13 +1094,32 @@ if (!itemId || !select) {
       const payment = document.getElementById("payment").value;
 
       if (!customerName || !phone || !address) {
-        message.textContent = "Pakikumpleto ang pangalan, cellphone, at address.";
+        message.textContent =
+          "Pakikumpleto ang pangalan, cellphone, at address.";
+        return;
+      }
+
+      if (!window.crypto || !window.crypto.getRandomValues) {
+        message.textContent =
+          "Hindi suportado ng browser ang secure tracking code. " +
+          "Buksan ang website sa ligtas na HTTPS connection.";
         return;
       }
 
       const submittedCart = cart.map(p => ({ ...p }));
-      const total = submittedCart.reduce((sum, p) => sum + Number(p.price) * Number(p.qty), 0);
+      const total = submittedCart.reduce(
+        (sum, p) => sum + Number(p.price) * Number(p.qty),
+        0
+      );
       const isMarketplace = submittedCart[0].kind === "marketplace";
+
+      // Gumawa ng 32 random bytes = 64 hexadecimal characters.
+      const randomBytes = new Uint8Array(32);
+      window.crypto.getRandomValues(randomBytes);
+
+      const trackingToken = Array.from(randomBytes)
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
 
       orderInProgress = true;
       button.disabled = true;
@@ -1108,22 +1129,28 @@ if (!itemId || !select) {
         let data;
         let error;
 
+        const orderParameters = {
+          p_customer_name: customerName,
+          p_phone: phone,
+          p_delivery_address: address,
+          p_payment_method: payment,
+          p_items: submittedCart.map(p => ({
+            product_id: p.id,
+            quantity: p.qty
+          })),
+          p_tracking_token: trackingToken
+        };
+
         if (isMarketplace) {
-          ({ data, error } = await pinoyMartSupabase.rpc("submit_marketplace_order", {
-            p_customer_name: customerName,
-            p_phone: phone,
-            p_delivery_address: address,
-            p_payment_method: payment,
-            p_items: submittedCart.map(p => ({ product_id: p.id, quantity: p.qty }))
-          }));
+          ({ data, error } = await pinoyMartSupabase.rpc(
+            "submit_marketplace_order",
+            orderParameters
+          ));
         } else {
-          ({ data, error } = await pinoyMartSupabase.rpc("submit_public_order", {
-            p_customer_name: customerName,
-            p_phone: phone,
-            p_delivery_address: address,
-            p_payment_method: payment,
-            p_items: submittedCart.map(p => ({ product_id: p.id, quantity: p.qty }))
-          }));
+          ({ data, error } = await pinoyMartSupabase.rpc(
+            "submit_public_order",
+            orderParameters
+          ));
         }
 
         if (error) throw error;
@@ -1135,7 +1162,10 @@ if (!itemId || !select) {
         message.textContent =
           "Matagumpay na na-save ang order request!\n\n" +
           "Order ID: " + data +
-          "\nPangalan: " + customerName +
+          "\nTracking Code: " + trackingToken +
+          "\n\nITAGO ANG TRACKING CODE NA ITO. " +
+          "Kakailanganin ito para tingnan ang status ng order." +
+          "\n\nPangalan: " + customerName +
           "\nKabuuan: " + money(total) +
           "\nBayad: " + payment +
           "\nStatus: Pending" +
@@ -1146,12 +1176,17 @@ if (!itemId || !select) {
         renderCart();
         form.reset();
 
-        if (isMarketplace) await loadApprovedMarketplaceProducts();
+        if (isMarketplace) {
+          await loadApprovedMarketplaceProducts();
+        }
       } catch (error) {
         console.error("Order error:", error);
-        message.textContent = "Hindi na-save ang order.\n" +
-          (error.message || "Pakisubukan muli.") +
-          "\n\nHindi na-clear ang cart. Suriin muna ang error bago subukan ulit.";
+
+        message.textContent =
+          "Hindi nakumpirma ang pag-save ng order.\n" +
+          (error.message || "Pakisuri muna ang error.") +
+          "\n\nHuwag munang ulitin ang order hangga't hindi " +
+          "nasusuri kung na-save na ito.";
       } finally {
         orderInProgress = false;
         button.disabled = false;
