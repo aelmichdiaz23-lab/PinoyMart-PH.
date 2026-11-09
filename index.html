@@ -592,6 +592,50 @@
       }
     });
 
+    // SELLER ORDER STATUS UPDATE
+    document.getElementById("sellerOrders").addEventListener("click", async (event) => {
+      const button = event.target.closest(".update-seller-order-status");
+      if (!button) return;
+
+      if (!currentUser) {
+        alert("Mag-login muna.");
+        return;
+      }
+
+      const itemId = Number(button.dataset.itemId);
+      const select = document.getElementById(`seller-status-${itemId}`);
+      const message = document.getElementById("sellerOrdersMessage");
+
+      if (!Number.isSafeInteger(itemId) || !select) {
+        message.textContent = "Hindi mahanap ang order item.";
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = "Sine-save ang bagong status...";
+
+      try {
+        const { error } = await pinoyMartSupabase.rpc(
+          "update_my_order_item_status",
+          {
+            p_order_item_id: itemId,
+            p_new_status: select.value
+          }
+        );
+
+        if (error) throw error;
+
+        message.textContent = "Matagumpay na na-update ang status!";
+        await loadSellerOrders();
+      } catch (error) {
+        console.error("Update seller order status error:", error);
+        message.textContent =
+          "Hindi na-update ang status. Pakisubukan ulit.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     // LOGIN
     document.getElementById("loginForm").addEventListener("submit", async event => {
       event.preventDefault();
