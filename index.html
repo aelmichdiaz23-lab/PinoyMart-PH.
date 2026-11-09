@@ -863,141 +863,195 @@
     document.getElementById("loadSellerOrdersButton")
       .addEventListener("click", loadSellerOrders);
 
-    async function loadSellerOrders() {
-      if (!currentUser) {
-        alert("Mag-login muna.");
-        return;
-      }
 
-      const container = document.getElementById("sellerOrders");
-      const message = document.getElementById("sellerOrdersMessage");
-      const button = document.getElementById("loadSellerOrdersButton");
+async function loadAdminProducts() {
+  if (!currentUser || currentRole !== "admin") {
+    alert("Admin lamang ang puwedeng tumingin sa listahan.");
+    return;
+  }
 
-      button.disabled = true;
-      container.innerHTML = "<p>Kinukuha ang mga order...</p>";
-      message.textContent = "";
+  const container = document.getElementById("adminProducts");
+  const message = document.getElementById("adminMessage");
+  const statusFilter = document.getElementById("adminStatus");
 
-      try {
-        const { data, error } = await pinoyMartSupabase
-          .from("order_items")
-          .select(`
-            order_id,
-            product_name,
-            quantity,
-            line_total,
-             marketplace_product_id,
-            seller_status,
-            id,
-            orders (
-              customer_name,
-              phone,
-              delivery_address,
-              payment_method,
-              status,
-              created_at
-            )
-          `)
-          .eq("seller_id", currentUser.id)
-          .not("marketplace_product_id", "is", null);
+  if (!container || !message || !statusFilter) {
+    console.error("Hindi makita ang admin panel elements.");
+    return;
+  }
 
-        if (error) throw error;
+  const status = statusFilter.value;
+  container.innerHTML = "<p>Kinukuha ang mga produkto...</p>";
+  message.textContent = "";
 
-        const items = data || [];
+  try {
+    const { data, error } = await pinoyMartSupabase
+      .from("marketplace_products")
+      .select("id,name,description,category,price,stock,image_url,approval_status,seller_id,created_at")
+      .eq("approval_status", status)
+      .order("created_at", { ascending: false });
 
-        if (items.length === 0) {
-          container.innerHTML =
-            "<p>Wala ka pang order para sa iyong mga produkto.</p>";
-          message.textContent = "Matagumpay na nakuha ang mga order.";
-          return;
-        }
+    if (error) throw error;
 
+    container.innerHTML = (data || []).map(p => {
+      const imageUrl = safeImageUrl(p.image_url);
+      const image = imageUrl
+        ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name || "Produkto")}" loading="lazy">`
+        : `<div class="emoji">🛍️</div>`;
 
-        container.innerHTML = items.map(item => {
-          const order = Array.isArray(item.orders)
-            ? item.orders[0]
-            : item.orders;
+      const reviewButtons = status === "pending" ? `
+        <div class="product-actions">
+          <button class="primary" type="button"
+            onclick="reviewProduct(${Number(p.id)}, 'approved')">
+            Aprubahan
+          </button>
+          <button class="danger" type="button"
+            onclick="reviewProduct(${Number(p.id)}, 'rejected')">
+            Tanggihan
+          </button>
+        </div>
+      ` : "";
 
-          if (!order) return "";
+      return `
+        <article class="card">
+          ${image}
+          <h3>${escapeHtml(p.name || "")}</h3>
+          <p>${escapeHtml(p.category || "")}</p>
+          <p>${escapeHtml(p.description || "")}</p>
+          <p class="price">${money(Number(p.price) || 0)}</p>
+          <p>Stock: ${Number(p.stock) || 0}</p>
+          <p>Status: <span class="status">${escapeHtml(p.approval_status || "")}</span></p>
+          <p class="notice">Seller ID: ${escapeHtml(p.seller_id || "")}</p>
+          ${reviewButtons}
+        </article>
+      `;
+    }).join("") || "<p>Walang produkto sa napiling status.</p>";
 
-          return `
-            <article class="card">
-              <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
-              <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
-              <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
-              <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
-              <hr>
-              <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-              <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
-              <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-              <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
-              <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
-              <p><strong>Status ng produkto mo:</strong>
-                ${escapeHtml(item.seller_status || "Pending")}
-              </p>
+    message.textContent = "Matagumpay na nakuha ang listahan.";
+  } catch (error) {
+    console.error("Admin products error:", error);
+    container.innerHTML = "";
+    message.textContent =
+      "Hindi makuha ang mga produkto: " +
+      (error.message || "Pakisuri ang admin access at RLS policies.");
+  }
+}
 
-              <label for="seller-status-${item.id}">Bagong status:</label>
-              <select id="seller-status-${item.id}" class="seller-order-status">
-                ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
-                  .map(status => `
-                    <option value="${status}" ${
-                      (item.seller_status || "Pending") === status ? "selected" : ""
-                    }>${status}</option>
-                  `).join("")}
-              </select>
+document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
+document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
 
-              <button
-                type="button"
-                class="secondary update-seller-order-status"
-                data-item-id="${item.id}">
-                I-update ang Status
-              </button>
+async function loadSellerOrders() {
+  if (!currentUser) {
+    alert("Mag-login muna.");
+    return;
+  }
 
-              <p><strong>Petsa:</strong> ${
-                order.created_at
-                  ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
-                  : "Walang petsa"
-              }</p>
-            </article>
-          `;
-        }).join("");
+  const container = document.getElementById("sellerOrders");
+  const message = document.getElementById("sellerOrdersMessage");
+  const button = document.getElementById("loadSellerOrdersButton");
 
-        if (error) throw error;
+  if (!container || !message || !button) {
+    console.error("Hindi makita ang seller orders HTML elements.");
+    return;
+  }
 
-        container.innerHTML = (data || []).map(p => {
+  button.disabled = true;
+  container.innerHTML = "<p>Kinukuha ang mga order...</p>";
+  message.textContent = "";
 
-          const imageUrl = safeImageUrl(p.image_url);
-          const image = imageUrl
-            ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name)}" loading="lazy">`
-            : `<div class="emoji">🛍️</div>`;
+  try {
+    const { data, error } = await pinoyMartSupabase
+      .from("order_items")
+      .select(`
+        order_id,
+        product_name,
+        quantity,
+        line_total,
+        marketplace_product_id,
+        seller_status,
+        id,
+        orders (
+          customer_name,
+          phone,
+          delivery_address,
+          payment_method,
+          status,
+          created_at
+        )
+      `)
+      .eq("seller_id", currentUser.id)
+      .not("marketplace_product_id", "is", null);
 
-          const reviewButtons = status === "pending" ? `
-            <div class="product-actions">
-              <button class="primary" onclick="reviewProduct(${Number(p.id)},'approved')">Approve</button>
-              <button class="danger" onclick="reviewProduct(${Number(p.id)},'rejected')">Reject</button>
-            </div>
-          ` : "";
+    if (error) throw error;
 
-          return `
-            <article class="card">
-              ${image}
-              <h3>${escapeHtml(p.name)}</h3>
-              <p>${escapeHtml(p.category)}</p>
-              <p>${escapeHtml(p.description || "")}</p>
-              <p class="price">${money(p.price)}</p>
-              <p>Stock: ${Number(p.stock)}</p>
-              <p>Status: <span class="status">${escapeHtml(p.approval_status)}</span></p>
-              <p class="notice">Seller ID: ${escapeHtml(p.seller_id)}</p>
-              ${reviewButtons}
-            </article>
-          `;
-        }).join("") || "<p>Walang produkto sa status na ito.</p>";
-      } catch (error) {
-        console.error(error);
-        container.innerHTML = "";
-        message.textContent =
-          "Hindi makuha ang admin list: " + (error.message || "Suriin ang admin role at RPC function.");
-      }
+    const items = data || [];
+
+    if (items.length === 0) {
+      container.innerHTML =
+        "<p>Wala ka pang order para sa iyong mga produkto.</p>";
+      message.textContent = "Matagumpay na nakuha ang mga order.";
+      return;
     }
+
+    container.innerHTML = items.map(item => {
+      const order = Array.isArray(item.orders)
+        ? item.orders[0]
+        : item.orders;
+
+      if (!order) return "";
+
+      return `
+        <article class="card">
+          <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
+          <p><strong>Produkto:</strong> ${escapeHtml(item.product_name || "")}</p>
+          <p><strong>Dami:</strong> ${Number(item.quantity) || 0}</p>
+          <p><strong>Halaga:</strong> ${money(Number(item.line_total) || 0)}</p>
+          <hr>
+          <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+          <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
+          <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+          <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
+          <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
+          <p><strong>Status ng produkto mo:</strong>
+            ${escapeHtml(item.seller_status || "Pending")}
+          </p>
+
+          <label for="seller-status-${item.id}">Bagong status:</label>
+          <select id="seller-status-${item.id}" class="seller-order-status">
+            ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
+              .map(status => `
+                <option value="${status}" ${
+                  (item.seller_status || "Pending") === status ? "selected" : ""
+                }>${status}</option>
+              `).join("")}
+          </select>
+
+          <button
+            type="button"
+            class="secondary update-seller-order-status"
+            data-item-id="${item.id}">
+            I-update ang Status
+          </button>
+
+          <p><strong>Petsa:</strong> ${
+            order.created_at
+              ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
+              : "Walang petsa"
+          }</p>
+        </article>
+      `;
+    }).join("");
+
+    message.textContent = "Matagumpay na nakuha ang mga order.";
+  } catch (error) {
+    console.error("Load seller orders error:", error);
+    container.innerHTML = "";
+    message.textContent =
+      "Hindi makuha ang mga order: " +
+      (error.message || "Pakisubukan muli.");
+  } finally {
+    button.disabled = false;
+  }
+}
 
     async function reviewProduct(id, status) {
       if (!currentUser || currentRole !== "admin") {
