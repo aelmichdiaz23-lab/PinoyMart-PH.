@@ -264,6 +264,49 @@
         <p class="notice">Ang order ay ipapadala bilang request at may status na Pending. Hindi ito kumpirmasyon ng bayad o pagpapadala.</p>
         <button class="primary" type="submit">Ipadala ang Order</button>
       </form>
+  
+      <hr style="margin: 24px 0;">
+
+      <h2>Subaybayan ang Order</h2>
+      <p>Ilagay ang Order ID at Tracking Code na ibinigay pagkatapos mag-order.</p>
+
+      <form id="trackingForm">
+        <div class="field">
+          <label for="trackingOrderId">Order ID</label>
+          <input
+            id="trackingOrderId"
+            type="text"
+            placeholder="Ilagay ang Order ID"
+            autocomplete="off"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label for="trackingToken">Tracking Code</label>
+          <input
+            id="trackingToken"
+            type="password"
+            minlength="64"
+            maxlength="64"
+            placeholder="Ilagay ang 64-character Tracking Code"
+            autocomplete="off"
+            required
+          >
+        </div>
+
+        <button class="primary" type="submit">
+          Tingnan ang Status
+        </button>
+      </form>
+
+      <div
+        id="trackingMessage"
+        role="status"
+        aria-live="polite"
+        style="white-space: pre-line; margin-top: 12px;"
+      ></div>
+
       <div id="message" role="status" aria-live="polite"></div>
     </section>
   </main>
