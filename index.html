@@ -946,14 +946,14 @@ if (loginForm) {
         return;
       }
 
-      const itemId = Number(button.dataset.itemId);
-      const select = document.getElementById(`seller-status-${itemId}`);
+const itemId = button.dataset.itemId;
+const select = document.getElementById(`seller-status-${itemId}`);
       const message = document.getElementById("sellerOrdersMessage");
 
-      if (!Number.isSafeInteger(itemId) || !select) {
-        message.textContent = "Hindi mahanap ang order item.";
-        return;
-      }
+if (!itemId || !select) {
+  message.textContent = "Hindi mahanap ang order item.";
+  return;
+}
 
       button.disabled = true;
       message.textContent = "Sine-save ang bagong status...";
