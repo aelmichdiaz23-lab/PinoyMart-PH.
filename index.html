@@ -773,9 +773,78 @@
     document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
     document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
 
+
     // SELLER ORDERS
     document.getElementById("loadSellerOrdersButton")
       .addEventListener("click", loadSellerOrders);
+
+    // ADMIN PRODUCTS
+    async function loadAdminProducts() {
+      if (!currentUser || currentRole !== "admin") {
+        return;
+      }
+
+      const container = document.getElementById("adminProducts");
+      const message = document.getElementById("adminMessage");
+      const status = document.getElementById("adminStatus").value;
+
+      container.innerHTML = "<p>Kinukuha ang mga produkto...</p>";
+      message.textContent = "";
+
+      try {
+        const { data, error } = await pinoyMartSupabase
+          .from("marketplace_products")
+          .select("id,name,description,category,price,stock,image_url,approval_status,seller_id,created_at")
+          .eq("approval_status", status)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        container.innerHTML = (data || []).map(p => {
+          const imageUrl = safeImageUrl(p.image_url);
+          const image = imageUrl
+            ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name || "Produkto")}">`
+            : `<div class="emoji">🛍️</div>`;
+
+          const buttons = status === "pending" ? `
+            <div class="product-actions">
+              <button class="primary" type="button"
+                onclick="reviewProduct(${Number(p.id)}, 'approved')">
+                Aprubahan
+              </button>
+              <button class="danger" type="button"
+                onclick="reviewProduct(${Number(p.id)}, 'rejected')">
+                Tanggihan
+              </button>
+            </div>` : "";
+
+          return `
+            <article class="card">
+              ${image}
+              <h3>${escapeHtml(p.name || "")}</h3>
+              <p>${escapeHtml(p.category || "")}</p>
+              <p>${escapeHtml(p.description || "")}</p>
+              <p class="price">${money(Number(p.price) || 0)}</p>
+              <p>Stock: ${Number(p.stock) || 0}</p>
+              <p>Status: ${escapeHtml(p.approval_status || "")}</p>
+              ${buttons}
+            </article>`;
+        }).join("") || "<p>Walang produkto sa napiling status.</p>";
+
+        message.textContent = "Matagumpay na nakuha ang listahan.";
+      } catch (error) {
+        console.error("Admin products error:", error);
+        container.innerHTML = "";
+        message.textContent = "Hindi makuha ang mga produkto: " + error.message;
+      }
+    }
+
+    document.getElementById("refreshAdmin")
+      .addEventListener("click", loadAdminProducts);
+
+    document.getElementById("adminStatus")
+      .addEventListener("change", loadAdminProducts);
+
 
     async function loadSellerOrders() {
       if (!currentUser) {
