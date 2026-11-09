@@ -1236,6 +1236,66 @@ if (!itemId || !select) {
       }
     });
 
+    
+    // GUEST ORDER TRACKING
+    document.getElementById("trackingForm").addEventListener("submit", async event => {
+      event.preventDefault();
+
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      const message = document.getElementById("trackingMessage");
+      const orderId = document.getElementById("trackingOrderId").value.trim();
+      const trackingToken = document.getElementById("trackingToken").value.trim();
+
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId)) {
+        message.textContent = "Hindi valid ang format ng Order ID.";
+        return;
+      }
+
+      if (!/^[0-9a-f]{64}$/i.test(trackingToken)) {
+        message.textContent = "Hindi valid ang format ng Tracking Code.";
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = "Hinahanap ang order. Pakihintay...";
+
+      try {
+        const { data, error } = await pinoyMartSupabase.rpc(
+          "track_guest_order",
+          {
+            p_order_id: orderId,
+            p_tracking_token: trackingToken
+          }
+        );
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          message.textContent =
+            "Hindi makita ang order. Suriin ang Order ID at Tracking Code.";
+          return;
+        }
+
+        const order = data[0];
+        const createdDate = order.created_at
+          ? new Date(order.created_at).toLocaleString("fil-PH")
+          : "Hindi available";
+
+        message.textContent =
+          "Nahanap ang order!\n\n" +
+          "Order ID: " + order.order_id +
+          "\nStatus: " + order.status +
+          "\nKabuuan: " + money(Number(order.total_amount)) +
+          "\nPetsa ng order: " + createdDate;
+      } catch (error) {
+        console.error("Order tracking error:", error);
+        message.textContent =
+          "Hindi makuha ang status ng order. Pakisubukan muli mamaya.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+
     async function initializeShop() {
       renderProducts();
       renderCart();
