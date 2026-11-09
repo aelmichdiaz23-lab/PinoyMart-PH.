@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#087f5b">
+  <title>PinoyMart PH | Online Shop</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7f6;
+      color: #202a26;
+    }
+    header {
+      background: #087f5b;
+      color: white;
+      padding: 20px 16px;
+    }
+    .wrap { max-width: 1000px; margin: auto; }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: 25px; }
+    .tagline { margin: 7px 0 15px; }
+    input, select, textarea, button {
+      font: inherit;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid #ccd5d0;
+      background: white;
+    }
+    button { cursor: pointer; border: 0; }
+    .search { margin-top: 12px; }
+    main { max-width: 1000px; margin: auto; padding: 18px 14px; }
+    .section-title { margin: 10px 0 16px; }
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e1e8e3;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .emoji { font-size: 42px; text-align: center; padding: 10px; }
+    .card h3 { font-size: 16px; min-height: 36px; }
+    .price { color: #087f5b; font-size: 19px; font-weight: bold; }
+    .primary { background: #087f5b; color: white; width: 100%; }
+    .cart, .checkout {
+      margin-top: 24px;
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid #e1e8e3;
+    }
+    .cart-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .small-btn { padding: 7px 10px; background: #e8f3ed; }
+    .field { margin: 12px 0; }
+    .field label { display: block; margin-bottom: 6px; }
+    .notice { color: #52625a; font-size: 13px; line-height: 1.5; }
+    #message { white-space: pre-line; margin-top: 12px; }
+    footer { text-align: center; padding: 24px; color: #64736b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="top">
+        <h1>🛍️ PinoyMart PH</h1>
+        <button onclick="showCart()" style="background:white;color:#087f5b">
+          🛒 Cart (<span id="cartCount">0</span>)
+        </button>
+      </div>
+      <p class="tagline">Sulit na bilihin, isang shop lang!</p>
+      <input id="search" class="search"
+        placeholder="🔎 Maghanap ng produkto..."
+        oninput="renderProducts()">
+    </div>
+  </header>
+
+  <main>
+    <h2 class="section-title">Mga Produkto</h2>
+    <div id="products" class="products"></div>
+
+    <section class="cart" id="cart">
+      <h2>🛒 Shopping Cart</h2>
+      <div id="cartItems">Wala pang laman ang cart.</div>
+      <h3>Kabuuan: <span id="total">₱0.00</span></h3>
+      <button class="primary" onclick="showCheckout()">Mag-checkout</button>
+    </section>
+
+    <section class="checkout" id="checkout" hidden>
+      <h2>📦 Impormasyon sa Order</h2>
+      <form id="orderForm">
+        <div class="field">
+          <label for="customer">Pangalan</label>
+          <input id="customer" required>
+        </div>
+        <div class="field">
+          <label for="phone">Numero ng cellphone</label>
+          <input id="phone" type="tel" required>
+        </div>
+        <div class="field">
+          <label for="address">Kumpletong delivery address</label>
+          <textarea id="address" rows="3" required></textarea>
+        </div>
+        <div class="field">
+          <label for="payment">Paraan ng pagbabayad</label>
+          <select id="payment" required>
+            <option value="COD">Cash on Delivery (COD)</option>
+            <option value="GCash">GCash (manual na kumpirmasyon)</option>
+          </select>
+        </div>
+        <p class="notice">
+          Demo pa lamang ito. Hindi pa nagpapadala ng totoong order
+          o tumatanggap ng bayad ang website na ito.
+        </p>
+        <button class="primary" type="submit">Subukan ang Order</button>
+      </form>
+      <div id="message" role="status"></div>
+    </section>
+  </main>
+
+  <footer>© 2026 PinoyMart PH</footer>
+
+  <script>
+    const products = [
+      { id: 1, name: "Instant Noodles", price: 15, emoji: "🍜" },
+      { id: 2, name: "Sardinas", price: 25, emoji: "🥫" },
+      { id: 3, name: "Sabon", price: 30, emoji: "🧼" },
+      { id: 4, name: "Kape", price: 12, emoji: "☕" },
+      { id: 5, name: "T-shirt", price: 150, emoji: "👕" },
+      { id: 6, name: "Gamit sa Bahay", price: 85, emoji: "🏠" }
+    ];
+
+    let cart = [];
+
+    function money(value) {
+      return "₱" + value.toLocaleString("en-PH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function renderProducts() {
+      const query = document.getElementById("search").value.toLowerCase();
+      const list = products.filter(p => p.name.toLowerCase().includes(query));
+
+      document.getElementById("products").innerHTML = list.map(p => `
+        <article class="card">
+          <div class="emoji">${p.emoji}</div>
+          <h3>${p.name}</h3>
+          <p class="price">${money(p.price)}</p>
+          <button class="primary" onclick="addToCart(${p.id})">
+            Idagdag sa Cart
+          </button>
+        </article>
+      `).join("") || "<p>Walang nahanap na produkto.</p>";
+    }
+
+    function addToCart(id) {
+      const item = cart.find(p => p.id === id);
+      if (item) item.qty++;
+      else cart.push({ ...products.find(p => p.id === id), qty: 1 });
+      renderCart();
+    }
+
+    function changeQty(id, amount) {
+      const item = cart.find(p => p.id === id);
+      if (!item) return;
+      item.qty += amount;
+      cart = cart.filter(p => p.qty > 0);
+      renderCart();
+    }
+
+    function renderCart() {
+      const count = cart.reduce((sum, p) => sum + p.qty, 0);
+      const total = cart.reduce((sum, p) => sum + p.price * p.qty, 0);
+
+      document.getElementById("cartCount").textContent = count;
+      document.getElementById("total").textContent = money(total);
+      document.getElementById("cartItems").innerHTML = cart.length
+        ? cart.map(p => `
+          <div class="cart-row">
+            <div>${p.name}<br>${money(p.price)} × ${p.qty}</div>
+            <div>
+              <button class="small-btn" onclick="changeQty(${p.id},-1)">−</button>
+              <button class="small-btn" onclick="changeQty(${p.id},1)">+</button>
+            </div>
+          </div>
+        `).join("")
+        : "Wala pang laman ang cart.";
+    }
+
+    function showCart() {
+      document.getElementById("cart").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function showCheckout() {
+      if (!cart.length) {
+        alert("Magdagdag muna ng produkto sa cart.");
+        return;
+      }
+      const section = document.getElementById("checkout");
+      section.hidden = false;
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+
+    document.getElementById("orderForm").addEventListener("submit", event => {
+      event.preventDefault();
+      if (!cart.length) {
+        alert("Walang produkto sa cart.");
+        return;
+      }
+
+      const total = cart.reduce((sum, p) => sum + p.price * p.qty, 0);
+      const payment = document.getElementById("payment").value;
+      const summary = cart.map(p =>
+        `${p.name} x ${p.qty} = ${money(p.price * p.qty)}`
+      ).join("\n");
+
+      document.getElementById("message").textContent =
+        "DEMO ORDER LAMANG — hindi pa naipapadala ang order.\n\n" +
+        "Pangalan: " + document.getElementById("customer").value +
+        "\nKabuuan: " + money(total) +
+        "\nBayad: " + payment +
+        "\n\n" + summary +
+        "\n\nKailangan pa ng database at aktuwal na order system.";
+
+    });
+
+    renderProducts();
+    renderCart();
+  </script>
+</body>
+</html>
