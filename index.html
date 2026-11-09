@@ -874,56 +874,48 @@
 
           if (!order) return "";
 
-          return `
-            <article class="card">
-              <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
-              <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
-              <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
-              <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
-              <hr>
-              <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-              <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
-              <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-              <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
-              <p><strong>Status:</strong> ${escapeHtml(order.status || "")}</p>
-              <p><strong>Petsa:</strong> ${
-                order.created_at
-                  ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
-                  : "Walang petsa"
-              }</p>
-            </article>
-          `;
-        }).join("");
+          
+return `
+  <article class="card">
+    <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
+    <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
+    <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
+    <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
+    <hr>
+    <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+    <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
+    <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+    <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
+    <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
+    <p><strong>Status ng produkto mo:</strong>
+      ${escapeHtml(item.seller_status || "Pending")}
+    </p>
 
-        message.textContent = "Matagumpay na nakuha ang mga order.";
-      } catch (error) {
-        console.error("Seller orders error:", error);
-        container.innerHTML =
-          "<p>Hindi makuha ang mga order. Ipa-check ang Supabase policies.</p>";
-        message.textContent = "Nagkaroon ng error sa pagkuha ng orders.";
-      } finally {
-        button.disabled = false;
-      }
-    }
-   
-    // ADMIN APPROVAL: gumagamit ng secure RPC na ginawa sa Supabase SQL Editor.
-    document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
-    document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
+    <label for="seller-status-${item.id}">Bagong status:</label>
+    <select id="seller-status-${item.id}" class="seller-order-status">
+      ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
+        .map(status => `
+          <option value="${status}" ${
+            (item.seller_status || "Pending") === status ? "selected" : ""
+          }>${status}</option>
+        `).join("")}
+    </select>
 
-    async function loadAdminProducts() {
-      if (!currentUser || currentRole !== "admin") return;
+    <button
+      type="button"
+      class="secondary update-seller-order-status"
+      data-item-id="${item.id}">
+      I-update ang Status
+    </button>
 
-      const container = document.getElementById("adminProducts");
-      const message = document.getElementById("adminMessage");
-      container.innerHTML = "<p>Kinukuha ang listahan...</p>";
-      message.textContent = "";
+    <p><strong>Petsa:</strong> ${
+      order.created_at
+        ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
+        : "Walang petsa"
+    }</p>
+  </article>
+`;
 
-      try {
-        const status = document.getElementById("adminStatus").value;
-        const { data, error } = await pinoyMartSupabase.rpc(
-          "admin_list_marketplace_products",
-          { p_status: status }
-        );
 
         if (error) throw error;
 
