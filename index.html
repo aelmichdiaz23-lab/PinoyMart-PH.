@@ -238,9 +238,22 @@
       </form>
       <div id="productMessage" class="feedback" role="status" aria-live="polite"></div>
 
+
       <hr>
       <h3>Aking mga Produkto</h3>
       <div id="sellerProducts" class="products"></div>
+
+      <hr>
+      <h3>📋 Mga Order Ko</h3>
+      <p class="notice">
+        Dito makikita ang mga order na may produkto mula sa iyong tindahan.
+      </p>
+      <button class="secondary" id="loadSellerOrdersButton" type="button">
+        Tingnan ang Aking mga Order
+      </button>
+      <div id="sellerOrdersMessage" class="feedback" role="status"
+        aria-live="polite"></div>
+      <div id="sellerOrders" class="products"></div>
     </section>
 
     <!-- ADMIN DASHBOARD -->
@@ -801,6 +814,96 @@
       `).join("") || "<p>Wala ka pang naipapasang produkto.</p>";
     }
 
+ 
+    // SELLER ORDERS
+    document.getElementById("loadSellerOrdersButton")
+      .addEventListener("click", loadSellerOrders);
+
+    async function loadSellerOrders() {
+      if (!currentUser) {
+        alert("Mag-login muna.");
+        return;
+      }
+
+      const container = document.getElementById("sellerOrders");
+      const message = document.getElementById("sellerOrdersMessage");
+      const button = document.getElementById("loadSellerOrdersButton");
+
+      button.disabled = true;
+      container.innerHTML = "<p>Kinukuha ang mga order...</p>";
+      message.textContent = "";
+
+      try {
+        const { data, error } = await pinoyMartSupabase
+          .from("order_items")
+          .select(`
+            order_id,
+            product_name,
+            quantity,
+            line_total,
+            marketplace_product_id,
+            orders (
+              customer_name,
+              phone,
+              delivery_address,
+              payment_method,
+              status,
+              created_at
+            )
+          `)
+          .eq("seller_id", currentUser.id)
+          .not("marketplace_product_id", "is", null);
+
+        if (error) throw error;
+
+        const items = data || [];
+
+        if (items.length === 0) {
+          container.innerHTML =
+            "<p>Wala ka pang order para sa iyong mga produkto.</p>";
+          message.textContent = "Matagumpay na nakuha ang mga order.";
+          return;
+        }
+
+        container.innerHTML = items.map(item => {
+          const order = Array.isArray(item.orders)
+            ? item.orders[0]
+            : item.orders;
+
+          if (!order) return "";
+
+          return `
+            <article class="card">
+              <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
+              <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
+              <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
+              <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
+              <hr>
+              <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+              <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
+              <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+              <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
+              <p><strong>Status:</strong> ${escapeHtml(order.status || "")}</p>
+              <p><strong>Petsa:</strong> ${
+                order.created_at
+                  ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
+                  : "Walang petsa"
+              }</p>
+            </article>
+          `;
+        }).join("");
+
+        message.textContent = "Matagumpay na nakuha ang mga order.";
+      } catch (error) {
+        console.error("Seller orders error:", error);
+        container.innerHTML =
+          "<p>Hindi makuha ang mga order. Ipa-check ang Supabase policies.</p>";
+        message.textContent = "Nagkaroon ng error sa pagkuha ng orders.";
+      } finally {
+        button.disabled = false;
+      }
+    }
+   
     // ADMIN APPROVAL: gumagamit ng secure RPC na ginawa sa Supabase SQL Editor.
     document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
     document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
