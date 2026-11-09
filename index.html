@@ -570,7 +570,7 @@
           message.textContent =
             "Nagawa ang registration. Tingnan ang email mo at kumpirmahin ang account kung may ipinadalang confirmation link. Pagkatapos, mag-login.";
         }
-        event.currentTarget.reset();
+        document.getElementById("registerForm")?.reset();
       } catch (error) {
         console.error(error);
         message.textContent = "Hindi nagtagumpay ang registration: " + (error.message || "Pakisubukan muli.");
