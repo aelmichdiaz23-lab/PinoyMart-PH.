@@ -65,18 +65,43 @@
       <p class="notice">Mag-register para makapagsumite ng produkto. Susuriin muna ng admin ang bawat produkto bago ito makita ng mga mamimili.</p>
 
       <div id="authForms">
-        <form id="registerForm">
-          <h3>Gumawa ng Seller Account</h3>
-          <div class="field">
-            <label for="registerEmail">Email</label>
-            <input id="registerEmail" type="email" maxlength="254" required autocomplete="email">
-          </div>
-          <div class="field">
-            <label for="registerPassword">Password (hindi bababa sa 6 na character)</label>
-            <input id="registerPassword" type="password" minlength="6" required autocomplete="new-password">
-          </div>
-          <button class="primary" type="submit">Mag-register</button>
-        </form>
+       
+<form id="registerForm">
+  <h3>Gumawa ng Account</h3>
+
+  <div class="field">
+    <label for="registerRole">Uri ng account</label>
+    <select id="registerRole" required>
+      <option value="buyer">Buyer — Bibili ng produkto</option>
+      <option value="seller">Seller — Magbebenta ng produkto</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="registerEmail">Email</label>
+    <input
+      id="registerEmail"
+      type="email"
+      maxlength="254"
+      required
+      autocomplete="email"
+    >
+  </div>
+
+  <div class="field">
+    <label for="registerPassword">Password (hindi bababa sa 6 na character)</label>
+    <input
+      id="registerPassword"
+      type="password"
+      minlength="6"
+      required
+      autocomplete="new-password"
+    >
+  </div>
+
+  <button class="primary" type="submit">Mag-register</button>
+</form>
+
 
         <hr>
 
