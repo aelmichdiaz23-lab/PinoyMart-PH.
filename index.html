@@ -98,8 +98,26 @@
   </header>
 
   <main>
-    <h2 class="section-title">Mga Produkto</h2>
-    <div id="products" class="products"></div>
+  
+<h2 class="section-title">Mga Produkto</h2>
+
+<div class="field">
+  <label for="categoryFilter">Pumili ng kategorya</label>
+  <select id="categoryFilter" onchange="renderProducts()">
+    <option value="all">Lahat ng Produkto</option>
+    <option value="Gamit sa Bahay">Gamit sa Bahay</option>
+    <option value="Damit at Sapatos">Damit at Sapatos</option>
+    <option value="Electronics at Accessories">Electronics at Cellphone Accessories</option>
+    <option value="Beauty at Personal Care">Beauty Products at Personal Care</option>
+    <option value="Grocery at Pagkain">Grocery at Pagkain</option>
+    <option value="Laruan at Gamit ng Bata">Laruan at Gamit ng Bata</option>
+    <option value="Bag at Accessories">Bag at Accessories</option>
+    <option value="School at Office Supplies">School at Office Supplies</option>
+  </select>
+</div>
+
+<div id="products" class="products"></div>
+
 
     <section class="cart" id="cart">
       <h2>🛒 Shopping Cart</h2>
@@ -172,21 +190,29 @@ const products = [
       });
     }
 
-    function renderProducts() {
-      const query = document.getElementById("search").value.toLowerCase();
-      const list = products.filter(p => p.name.toLowerCase().includes(query));
 
-      document.getElementById("products").innerHTML = list.map(p => `
-        <article class="card">
-          <div class="emoji">${p.emoji}</div>
-          <h3>${p.name}</h3>
-          <p class="price">${money(p.price)}</p>
-          <button class="primary" onclick="addToCart(${p.id})">
-            Idagdag sa Cart
-          </button>
-        </article>
-      `).join("") || "<p>Walang nahanap na produkto.</p>";
-    }
+function renderProducts() {
+  const query = document.getElementById("search").value.toLowerCase();
+  const category = document.getElementById("categoryFilter").value;
+
+  const list = products.filter(p =>
+    p.name.toLowerCase().includes(query) &&
+    (category === "all" || p.category === category)
+  );
+
+  document.getElementById("products").innerHTML = list.map(p => `
+    <article class="card">
+      <div class="emoji">${p.emoji}</div>
+      <p class="notice">${p.category}</p>
+      <h3>${p.name}</h3>
+      <p class="price">${money(p.price)}</p>
+      <button class="primary" onclick="addToCart(${p.id})">
+        Idagdag sa Cart
+      </button>
+    </article>
+  `).join("") || "<p>Walang nahanap na produkto.</p>";
+}
+
 
     function addToCart(id) {
       const item = cart.find(p => p.id === id);
