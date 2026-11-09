@@ -525,48 +525,60 @@ if (loginForm) {
       if (!error) await refreshAccount();
     });
 
-    async function refreshAccount() {
-      const { data, error } = await pinoyMartSupabase.auth.getUser();
-      if (error) console.error("Get user error:", error);
+async function refreshAccount() {
+  const { data, error } = await pinoyMartSupabase.auth.getUser();
+  if (error) console.error("Get user error:", error);
 
-      currentUser = data?.user || null;
-      currentRole = null;
+  currentUser = data?.user || null;
+  currentRole = null;
 
-      document.getElementById("authForms").classList.toggle("hidden", !!currentUser);
-      document.getElementById("loggedInArea").classList.toggle("hidden", !currentUser);
-      document.getElementById("sellerPanel").classList.toggle("hidden", !currentUser);
-      document.getElementById("adminPanel").classList.add("hidden");
+  document.getElementById("authForms").classList.toggle("hidden", !!currentUser);
+  document.getElementById("loggedInArea").classList.toggle("hidden", !currentUser);
+  document.getElementById("sellerPanel").classList.add("hidden");
+  document.getElementById("adminPanel").classList.add("hidden");
 
-      if (!currentUser) {
-        document.getElementById("accountEmail").textContent = "";
-        document.getElementById("accountRole").textContent = "";
-        document.getElementById("sellerProducts").innerHTML = "";
-        document.getElementById("sellerOrders").innerHTML = "";
-        return;
-      }
+  if (!currentUser) {
+    document.getElementById("accountEmail").textContent = "";
+    document.getElementById("accountRole").textContent = "";
+    document.getElementById("sellerProducts").innerHTML = "";
+    document.getElementById("sellerOrders").innerHTML = "";
+    return;
+  }
 
-      document.getElementById("accountEmail").textContent = currentUser.email || "";
+  document.getElementById("accountEmail").textContent = currentUser.email || "";
 
-      const { data: roleRow, error: roleError } = await pinoyMartSupabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", currentUser.id)
-        .maybeSingle();
+  const { data: roleRow, error: roleError } = await pinoyMartSupabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
 
-      if (roleError) console.error("Role lookup:", roleError);
-      currentRole = roleRow?.role || "seller";
+  if (roleError) {
+    console.error("Role lookup:", roleError);
+    document.getElementById("accountRole").textContent =
+      "Hindi mabasa ang account role.";
+    return;
+  }
 
-      document.getElementById("accountRole").textContent =
-        currentRole === "admin" ? "Role: Admin" : "Role: Seller";
+  currentRole = roleRow?.role || "buyer";
 
-      if (currentRole === "admin") {
-        document.getElementById("adminPanel").classList.remove("hidden");
-        await loadAdminProducts();
-      }
+  if (currentRole === "admin") {
+    document.getElementById("accountRole").textContent = "Role: Admin";
+    document.getElementById("adminPanel").classList.remove("hidden");
+    await loadAdminProducts();
+    return;
+  }
 
-      await loadStoreProfile();
-      await loadSellerProducts();
-    }
+  if (currentRole === "seller") {
+    document.getElementById("accountRole").textContent = "Role: Seller";
+    document.getElementById("sellerPanel").classList.remove("hidden");
+    await loadStoreProfile();
+    await loadSellerProducts();
+    return;
+  }
+
+  document.getElementById("accountRole").textContent = "Role: Buyer";
+}
 
     // SELLER PROFILE
     async function loadStoreProfile() {
