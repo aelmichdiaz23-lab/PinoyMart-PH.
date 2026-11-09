@@ -911,6 +911,7 @@
           return;
         }
 
+
         container.innerHTML = items.map(item => {
           const order = Array.isArray(item.orders)
             ? item.orders[0]
@@ -918,52 +919,52 @@
 
           if (!order) return "";
 
-          
-return `
-  <article class="card">
-    <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
-    <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
-    <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
-    <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
-    <hr>
-    <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-    <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
-    <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-    <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
-    <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
-    <p><strong>Status ng produkto mo:</strong>
-      ${escapeHtml(item.seller_status || "Pending")}
-    </p>
+          return `
+            <article class="card">
+              <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
+              <p><strong>Produkto:</strong> ${escapeHtml(item.product_name)}</p>
+              <p><strong>Dami:</strong> ${Number(item.quantity)}</p>
+              <p><strong>Halaga:</strong> ${money(item.line_total)}</p>
+              <hr>
+              <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+              <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
+              <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+              <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
+              <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
+              <p><strong>Status ng produkto mo:</strong>
+                ${escapeHtml(item.seller_status || "Pending")}
+              </p>
 
-    <label for="seller-status-${item.id}">Bagong status:</label>
-    <select id="seller-status-${item.id}" class="seller-order-status">
-      ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
-        .map(status => `
-          <option value="${status}" ${
-            (item.seller_status || "Pending") === status ? "selected" : ""
-          }>${status}</option>
-        `).join("")}
-    </select>
+              <label for="seller-status-${item.id}">Bagong status:</label>
+              <select id="seller-status-${item.id}" class="seller-order-status">
+                ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
+                  .map(status => `
+                    <option value="${status}" ${
+                      (item.seller_status || "Pending") === status ? "selected" : ""
+                    }>${status}</option>
+                  `).join("")}
+              </select>
 
-    <button
-      type="button"
-      class="secondary update-seller-order-status"
-      data-item-id="${item.id}">
-      I-update ang Status
-    </button>
+              <button
+                type="button"
+                class="secondary update-seller-order-status"
+                data-item-id="${item.id}">
+                I-update ang Status
+              </button>
 
-    <p><strong>Petsa:</strong> ${
-      order.created_at
-        ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
-        : "Walang petsa"
-    }</p>
-  </article>
-`;
-
+              <p><strong>Petsa:</strong> ${
+                order.created_at
+                  ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH"))
+                  : "Walang petsa"
+              }</p>
+            </article>
+          `;
+        }).join("");
 
         if (error) throw error;
 
         container.innerHTML = (data || []).map(p => {
+
           const imageUrl = safeImageUrl(p.image_url);
           const image = imageUrl
             ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name)}" loading="lazy">`
