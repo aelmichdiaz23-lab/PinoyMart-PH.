@@ -505,7 +505,7 @@
 
         message.textContent = "Matagumpay ang login.";
         await refreshAccount();
-        event.currentTarget.reset();
+       document.getElementById("loginForm").reset();
       } catch (error) {
         console.error(error);
         message.textContent = "Hindi makapag-login: " + (error.message || "Suriin ang email at password.");
