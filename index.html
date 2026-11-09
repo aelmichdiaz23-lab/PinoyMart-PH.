@@ -863,8 +863,7 @@
     document.getElementById("loadSellerOrdersButton")
       .addEventListener("click", loadSellerOrders);
 
-
-..eq("approval_status", status) {
+.eq("approval_status", status.toLowerCase()) {
   if (!currentUser || currentRole !== "admin") {
     alert("Admin lamang ang puwedeng tumingin sa listahan.");
     return;
