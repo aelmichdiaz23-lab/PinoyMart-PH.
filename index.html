@@ -864,7 +864,7 @@
       .addEventListener("click", loadSellerOrders);
 
 
-async function loadAdminProducts() {
+.eq("approval_status", status.toLowerCase()) {
   if (!currentUser || currentRole !== "admin") {
     alert("Admin lamang ang puwedeng tumingin sa listahan.");
     return;
