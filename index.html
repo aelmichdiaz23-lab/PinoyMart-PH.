@@ -54,12 +54,22 @@
       border: 1px solid #e1e8e3;
       border-radius: 12px;
       padding: 14px;
+      overflow-wrap: anywhere;
     }
     .emoji { font-size: 42px; text-align: center; padding: 10px; }
+    .product-image {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: #f7f9f8;
+    }
     .card h3 { font-size: 16px; min-height: 36px; }
     .price { color: #087f5b; font-size: 19px; font-weight: bold; }
     .primary { background: #087f5b; color: white; width: 100%; }
-    .cart, .checkout {
+    .secondary { background: #e8f3ed; color: #145b43; }
+    .danger { background: #b42318; color: white; }
+    .panel {
       margin-top: 24px;
       background: white;
       border-radius: 12px;
@@ -78,7 +88,20 @@
     .field { margin: 12px 0; }
     .field label { display: block; margin-bottom: 6px; }
     .notice { color: #52625a; font-size: 13px; line-height: 1.5; }
-    #message { white-space: pre-line; margin-top: 12px; overflow-wrap: anywhere; }
+    .status { font-weight: bold; }
+    #message, .feedback {
+      white-space: pre-line;
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+    .feedback { color: #145b43; }
+    .hidden { display: none !important; }
+    .product-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .product-actions button { flex: 1; }
     footer { text-align: center; padding: 24px; color: #64736b; }
   </style>
 </head>
@@ -99,6 +122,147 @@
   </header>
 
   <main>
+    <!-- SELLER LOGIN AT REGISTRATION -->
+    <section class="panel" id="accountPanel">
+      <h2>🏪 Seller Account</h2>
+      <p class="notice">
+        Mag-register para makapagsumite ng produkto.
+        Susuriin muna ng admin ang bawat produkto bago ito makita ng mga mamimili.
+      </p>
+
+      <div id="authForms">
+        <form id="registerForm">
+          <h3>Gumawa ng Seller Account</h3>
+          <div class="field">
+            <label for="registerEmail">Email</label>
+            <input id="registerEmail" type="email" maxlength="254" required
+              autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="registerPassword">Password (hindi bababa sa 6 na character)</label>
+            <input id="registerPassword" type="password" minlength="6"
+              required autocomplete="new-password">
+          </div>
+          <button class="primary" type="submit">Mag-register</button>
+        </form>
+
+        <hr>
+
+        <form id="loginForm">
+          <h3>Mag-login</h3>
+          <div class="field">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" required
+              autocomplete="current-password">
+          </div>
+          <button class="primary" type="submit">Mag-login</button>
+        </form>
+      </div>
+
+      <div id="loggedInArea" class="hidden">
+        <p>Naka-login bilang: <strong id="accountEmail"></strong></p>
+        <p id="accountRole" class="notice"></p>
+        <button class="secondary" id="logoutButton" type="button">Mag-logout</button>
+      </div>
+
+      <div id="authMessage" class="feedback" role="status" aria-live="polite"></div>
+    </section>
+
+    <!-- SELLER DASHBOARD -->
+    <section class="panel hidden" id="sellerPanel">
+      <h2>📦 Seller Dashboard</h2>
+
+      <form id="storeForm">
+        <h3>Impormasyon ng Tindahan</h3>
+        <div class="field">
+          <label for="storeName">Pangalan ng tindahan</label>
+          <input id="storeName" maxlength="120" required>
+        </div>
+        <div class="field">
+          <label for="storePhone">Contact number (opsyonal)</label>
+          <input id="storePhone" type="tel" maxlength="30">
+        </div>
+        <button class="primary" type="submit">I-save ang Tindahan</button>
+      </form>
+      <div id="storeMessage" class="feedback" role="status"></div>
+
+      <hr>
+
+      <form id="productForm">
+        <h3>➕ Magsumite ng Produkto</h3>
+        <div class="field">
+          <label for="productName">Pangalan ng produkto</label>
+          <input id="productName" maxlength="150" required>
+        </div>
+        <div class="field">
+          <label for="productDescription">Paglalarawan</label>
+          <textarea id="productDescription" rows="3" maxlength="2000"></textarea>
+        </div>
+        <div class="field">
+          <label for="productCategory">Kategorya</label>
+          <select id="productCategory" required>
+            <option value="Gamit sa Bahay">Gamit sa Bahay</option>
+            <option value="Damit at Sapatos">Damit at Sapatos</option>
+            <option value="Electronics at Accessories">Electronics at Cellphone Accessories</option>
+            <option value="Beauty at Personal Care">Beauty at Personal Care</option>
+            <option value="Grocery at Pagkain">Grocery at Pagkain</option>
+            <option value="Laruan at Gamit ng Bata">Laruan at Gamit ng Bata</option>
+            <option value="Bag at Accessories">Bag at Accessories</option>
+            <option value="School at Office Supplies">School at Office Supplies</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="productPrice">Presyo (₱)</label>
+          <input id="productPrice" type="number" min="0.01" max="999999999"
+            step="0.01" required>
+        </div>
+        <div class="field">
+          <label for="productStock">Bilang ng stock</label>
+          <input id="productStock" type="number" min="0" max="1000000"
+            step="1" value="1" required>
+        </div>
+        <div class="field">
+          <label for="productImage">Link ng larawan (opsyonal)</label>
+          <input id="productImage" type="url" maxlength="2000"
+            placeholder="https://...">
+          <p class="notice">
+            Gumamit lamang ng direktang link ng larawan na may https://.
+            Wala pang image upload mula sa cellphone sa yugtong ito.
+          </p>
+        </div>
+        <button class="primary" type="submit">Ipadala para sa Approval</button>
+      </form>
+      <div id="productMessage" class="feedback" role="status" aria-live="polite"></div>
+
+      <hr>
+      <h3>Aking mga Produkto</h3>
+      <div id="sellerProducts" class="products"></div>
+    </section>
+
+    <!-- ADMIN DASHBOARD -->
+    <section class="panel hidden" id="adminPanel">
+      <h2>🛡️ Admin Approval Panel</h2>
+      <p class="notice">
+        Suriin ang produkto bago aprubahan. Ang approved lamang ang maaaring
+        makita sa pampublikong marketplace.
+      </p>
+      <div class="field">
+        <label for="adminStatus">Mga produktong ipapakita</label>
+        <select id="adminStatus">
+          <option value="pending">Naghihintay ng approval</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+      <button class="secondary" id="refreshAdmin" type="button">I-refresh ang Listahan</button>
+      <div id="adminMessage" class="feedback" role="status" aria-live="polite"></div>
+      <div id="adminProducts" class="products"></div>
+    </section>
+
     <h2 class="section-title">Mga Produkto</h2>
 
     <div class="field">
@@ -118,14 +282,18 @@
 
     <div id="products" class="products"></div>
 
-    <section class="cart" id="cart">
+    <section class="panel" id="cart">
       <h2>🛒 Shopping Cart</h2>
       <div id="cartItems">Wala pang laman ang cart.</div>
       <h3>Kabuuan: <span id="total">₱0.00</span></h3>
+      <p class="notice">
+        Sa kasalukuyan, isang uri ng catalog lamang ang puwedeng nasa cart
+        bawat checkout: lumang catalog o marketplace products.
+      </p>
       <button class="primary" onclick="showCheckout()">Mag-checkout</button>
     </section>
 
-    <section class="checkout" id="checkout" hidden>
+    <section class="panel" id="checkout" hidden>
       <h2>📦 Impormasyon sa Order</h2>
       <form id="orderForm">
         <div class="field">
@@ -159,7 +327,6 @@
 
   <footer>© 2026 PinoyMart PH</footer>
 
-  <!-- I-load muna ang Supabase library bago ang JavaScript ng shop. -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const pinoyMartSupabase = window.supabase.createClient(
@@ -168,26 +335,29 @@
     );
 
     const products = [
-      { id: 1, name: "Storage Box", category: "Gamit sa Bahay", price: 120, emoji: "🧺" },
-      { id: 2, name: "Kutsara at Tinidor Set", category: "Gamit sa Bahay", price: 85, emoji: "🍴" },
-      { id: 3, name: "T-shirt", category: "Damit at Sapatos", price: 150, emoji: "👕" },
-      { id: 4, name: "Casual Sneakers", category: "Damit at Sapatos", price: 450, emoji: "👟" },
-      { id: 5, name: "Phone Case", category: "Electronics at Accessories", price: 99, emoji: "📱" },
-      { id: 6, name: "USB Charging Cable", category: "Electronics at Accessories", price: 75, emoji: "🔌" },
-      { id: 7, name: "Lip Tint", category: "Beauty at Personal Care", price: 89, emoji: "💄" },
-      { id: 8, name: "Shampoo", category: "Beauty at Personal Care", price: 65, emoji: "🧴" },
-      { id: 9, name: "Instant Noodles", category: "Grocery at Pagkain", price: 15, emoji: "🍜" },
-      { id: 10, name: "Sardinas", category: "Grocery at Pagkain", price: 25, emoji: "🥫" },
-      { id: 11, name: "Building Blocks", category: "Laruan at Gamit ng Bata", price: 180, emoji: "🧸" },
-      { id: 12, name: "Coloring Set", category: "Laruan at Gamit ng Bata", price: 60, emoji: "🖍️" },
-      { id: 13, name: "Sling Bag", category: "Bag at Accessories", price: 220, emoji: "👜" },
-      { id: 14, name: "Wallet", category: "Bag at Accessories", price: 100, emoji: "👛" },
-      { id: 15, name: "Notebook Set", category: "School at Office Supplies", price: 55, emoji: "📚" },
-      { id: 16, name: "Ballpen Set", category: "School at Office Supplies", price: 35, emoji: "🖊️" }
+      { id: 1, name: "Storage Box", category: "Gamit sa Bahay", price: 120, emoji: "🧺", kind: "legacy" },
+      { id: 2, name: "Kutsara at Tinidor Set", category: "Gamit sa Bahay", price: 85, emoji: "🍴", kind: "legacy" },
+      { id: 3, name: "T-shirt", category: "Damit at Sapatos", price: 150, emoji: "👕", kind: "legacy" },
+      { id: 4, name: "Casual Sneakers", category: "Damit at Sapatos", price: 450, emoji: "👟", kind: "legacy" },
+      { id: 5, name: "Phone Case", category: "Electronics at Accessories", price: 99, emoji: "📱", kind: "legacy" },
+      { id: 6, name: "USB Charging Cable", category: "Electronics at Accessories", price: 75, emoji: "🔌", kind: "legacy" },
+      { id: 7, name: "Lip Tint", category: "Beauty at Personal Care", price: 89, emoji: "💄", kind: "legacy" },
+      { id: 8, name: "Shampoo", category: "Beauty at Personal Care", price: 65, emoji: "🧴", kind: "legacy" },
+      { id: 9, name: "Instant Noodles", category: "Grocery at Pagkain", price: 15, emoji: "🍜", kind: "legacy" },
+      { id: 10, name: "Sardinas", category: "Grocery at Pagkain", price: 25, emoji: "🥫", kind: "legacy" },
+      { id: 11, name: "Building Blocks", category: "Laruan at Gamit ng Bata", price: 180, emoji: "🧸", kind: "legacy" },
+      { id: 12, name: "Coloring Set", category: "Laruan at Gamit ng Bata", price: 60, emoji: "🖍️", kind: "legacy" },
+      { id: 13, name: "Sling Bag", category: "Bag at Accessories", price: 220, emoji: "👜", kind: "legacy" },
+      { id: 14, name: "Wallet", category: "Bag at Accessories", price: 100, emoji: "👛", kind: "legacy" },
+      { id: 15, name: "Notebook Set", category: "School at Office Supplies", price: 55, emoji: "📚", kind: "legacy" },
+      { id: 16, name: "Ballpen Set", category: "School at Office Supplies", price: 35, emoji: "🖊️", kind: "legacy" }
     ];
 
+    let marketplaceProducts = [];
     let cart = [];
     let orderInProgress = false;
+    let currentUser = null;
+    let currentRole = null;
 
     function money(value) {
       return "₱" + Number(value).toLocaleString("en-PH", {
@@ -196,44 +366,144 @@
       });
     }
 
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, ch => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[ch]);
+    }
+
+    function safeImageUrl(value) {
+      try {
+        const url = new URL(value);
+        return url.protocol === "https:" ? url.href : "";
+      } catch {
+        return "";
+      }
+    }
+
+    function productKey(p) {
+      return p.kind === "marketplace" ? "market-" + p.id : "old-" + p.id;
+    }
+
+    function allProducts() {
+      return [...products, ...marketplaceProducts];
+    }
+
+    async function loadApprovedMarketplaceProducts() {
+      const { data, error } = await pinoyMartSupabase
+        .from("marketplace_products")
+        .select("id,name,description,category,price,stock,image_url,approval_status")
+        .eq("approval_status", "approved")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Marketplace products error:", error);
+        return;
+      }
+
+      marketplaceProducts = (data || []).map(p => ({
+        ...p,
+        kind: "marketplace",
+        id: Number(p.id),
+        price: Number(p.price),
+        emoji: "🛍️"
+      }));
+
+      // Alisin sa cart ang marketplace items na hindi na approved o wala nang stock.
+      cart = cart.filter(item => {
+        if (item.kind !== "marketplace") return true;
+        const latest = marketplaceProducts.find(p => p.id === item.id);
+        return latest && latest.stock >= item.qty;
+      });
+
+      renderProducts();
+      renderCart();
+    }
+
     function renderProducts() {
-      const query = document.getElementById("search").value.toLowerCase();
+      const query = document.getElementById("search").value.trim().toLowerCase();
       const category = document.getElementById("categoryFilter").value;
 
-      const list = products.filter(p =>
+      const list = allProducts().filter(p =>
         p.name.toLowerCase().includes(query) &&
         (category === "all" || p.category === category)
       );
 
-      document.getElementById("products").innerHTML = list.map(p => `
-        <article class="card">
-          <div class="emoji">${p.emoji}</div>
-          <p class="notice">${p.category}</p>
-          <h3>${p.name}</h3>
-          <p class="price">${money(p.price)}</p>
-          <button class="primary" onclick="addToCart(${p.id})">
-            Idagdag sa Cart
-          </button>
-        </article>
-      `).join("") || "<p>Walang nahanap na produkto.</p>";
+      document.getElementById("products").innerHTML = list.map(p => {
+        const imageUrl = p.kind === "marketplace" ? safeImageUrl(p.image_url) : "";
+        const image = imageUrl
+          ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name)}" loading="lazy">`
+          : `<div class="emoji">${p.emoji || "🛍️"}</div>`;
+
+        const stockText = p.kind === "marketplace"
+          ? `<p class="notice">Stock: ${Number(p.stock)}</p>`
+          : "";
+
+        const addButton = p.kind === "marketplace" && Number(p.stock) <= 0
+          ? `<button class="primary" disabled>Ubos na ang stock</button>`
+          : `<button class="primary" onclick="addToCart('${productKey(p)}')">Idagdag sa Cart</button>`;
+
+        return `
+          <article class="card">
+            ${image}
+            <p class="notice">${escapeHtml(p.category)}</p>
+            <h3>${escapeHtml(p.name)}</h3>
+            ${p.kind === "marketplace" && p.description
+              ? `<p>${escapeHtml(p.description)}</p>` : ""}
+            <p class="price">${money(p.price)}</p>
+            ${stockText}
+            ${addButton}
+          </article>
+        `;
+      }).join("") || "<p>Walang nahanap na produkto.</p>";
     }
 
-    function addToCart(id) {
-      const product = products.find(p => p.id === id);
+    function addToCart(key) {
+      const product = allProducts().find(p => productKey(p) === key);
       if (!product) return;
 
-      const item = cart.find(p => p.id === id);
-      if (item) item.qty++;
-      else cart.push({ ...product, qty: 1 });
+      if (cart.length && cart[0].kind !== product.kind) {
+        alert("Hindi puwedeng paghaluin ang lumang catalog at marketplace products sa iisang checkout. Tapusin muna o alisin ang laman ng cart.");
+        return;
+      }
+
+      if (product.kind === "marketplace" && Number(product.stock) <= 0) {
+        alert("Ubos na ang stock ng produktong ito.");
+        return;
+      }
+
+      const item = cart.find(p => productKey(p) === key);
+      if (item) {
+        if (product.kind === "marketplace" && item.qty + 1 > Number(product.stock)) {
+          alert("Hindi sapat ang stock.");
+          return;
+        }
+        item.qty++;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
 
       renderCart();
     }
 
-    function changeQty(id, amount) {
-      const item = cart.find(p => p.id === id);
+    function changeQty(key, amount) {
+      const item = cart.find(p => productKey(p) === key);
       if (!item) return;
 
-      item.qty += amount;
+      const newQty = item.qty + amount;
+      if (newQty > 0 && item.kind === "marketplace") {
+        const latest = marketplaceProducts.find(p => p.id === item.id);
+        if (!latest || newQty > Number(latest.stock)) {
+          alert("Hindi sapat ang stock.");
+          return;
+        }
+      }
+
+      item.qty = newQty;
       cart = cart.filter(p => p.qty > 0);
       renderCart();
     }
@@ -247,10 +517,13 @@
       document.getElementById("cartItems").innerHTML = cart.length
         ? cart.map(p => `
           <div class="cart-row">
-            <div>${p.name}<br>${money(p.price)} × ${p.qty}</div>
             <div>
-              <button class="small-btn" onclick="changeQty(${p.id},-1)" aria-label="Bawasan ang ${p.name}">−</button>
-              <button class="small-btn" onclick="changeQty(${p.id},1)" aria-label="Dagdagan ang ${p.name}">+</button>
+              ${escapeHtml(p.name)}<br>
+              ${money(p.price)} × ${p.qty}
+            </div>
+            <div>
+              <button class="small-btn" onclick="changeQty('${productKey(p)}',-1)" aria-label="Bawasan">−</button>
+              <button class="small-btn" onclick="changeQty('${productKey(p)}',1)" aria-label="Dagdagan">+</button>
             </div>
           </div>
         `).join("")
@@ -272,6 +545,349 @@
       section.scrollIntoView({ behavior: "smooth" });
     }
 
+    // REGISTRATION
+    document.getElementById("registerForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const message = document.getElementById("authMessage");
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      button.disabled = true;
+      message.textContent = "Gumagawa ng account...";
+
+      try {
+        const email = document.getElementById("registerEmail").value.trim();
+        const password = document.getElementById("registerPassword").value;
+
+        const { data, error } = await pinoyMartSupabase.auth.signUp({
+          email,
+          password
+        });
+        if (error) throw error;
+
+        if (data.session) {
+          message.textContent = "Matagumpay ang registration at naka-login ka na.";
+          await refreshAccount();
+        } else {
+          message.textContent =
+            "Nagawa ang registration. Tingnan ang email mo at kumpirmahin ang account kung may ipinadalang confirmation link. Pagkatapos, mag-login.";
+        }
+        event.currentTarget.reset();
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Hindi nagtagumpay ang registration: " + (error.message || "Pakisubukan muli.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    // LOGIN
+    document.getElementById("loginForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const message = document.getElementById("authMessage");
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      button.disabled = true;
+      message.textContent = "Nagla-login...";
+
+      try {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPassword").value;
+
+        const { error } = await pinoyMartSupabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+
+        message.textContent = "Matagumpay ang login.";
+        await refreshAccount();
+        event.currentTarget.reset();
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Hindi makapag-login: " + (error.message || "Suriin ang email at password.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    document.getElementById("logoutButton").addEventListener("click", async () => {
+      const { error } = await pinoyMartSupabase.auth.signOut();
+      document.getElementById("authMessage").textContent = error
+        ? "Hindi nakapag-logout: " + error.message
+        : "Nakapag-logout na.";
+      if (!error) await refreshAccount();
+    });
+
+    async function refreshAccount() {
+      const { data, error } = await pinoyMartSupabase.auth.getUser();
+      if (error) console.error(error);
+
+      currentUser = data?.user || null;
+      currentRole = null;
+
+      document.getElementById("authForms").classList.toggle("hidden", !!currentUser);
+      document.getElementById("loggedInArea").classList.toggle("hidden", !currentUser);
+      document.getElementById("sellerPanel").classList.toggle("hidden", !currentUser);
+      document.getElementById("adminPanel").classList.add("hidden");
+
+      if (!currentUser) {
+        document.getElementById("accountEmail").textContent = "";
+        document.getElementById("accountRole").textContent = "";
+        document.getElementById("sellerProducts").innerHTML = "";
+        return;
+      }
+
+      document.getElementById("accountEmail").textContent = currentUser.email || "";
+
+      const { data: roleRow, error: roleError } = await pinoyMartSupabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (roleError) console.error("Role lookup:", roleError);
+      currentRole = roleRow?.role || "seller";
+
+      document.getElementById("accountRole").textContent =
+        currentRole === "admin" ? "Role: Admin" : "Role: Seller";
+
+      if (currentRole === "admin") {
+        document.getElementById("adminPanel").classList.remove("hidden");
+        await loadAdminProducts();
+      }
+
+      await loadStoreProfile();
+      await loadSellerProducts();
+    }
+
+    // SELLER PROFILE
+    async function loadStoreProfile() {
+      if (!currentUser) return;
+
+      const { data, error } = await pinoyMartSupabase
+        .from("seller_profiles")
+        .select("store_name,contact_number")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Store profile:", error);
+        document.getElementById("storeMessage").textContent =
+          "Hindi mabasa ang profile. Suriin ang Supabase policies.";
+        return;
+      }
+
+      if (data) {
+        document.getElementById("storeName").value = data.store_name || "";
+        document.getElementById("storePhone").value = data.contact_number || "";
+      }
+    }
+
+    document.getElementById("storeForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!currentUser) {
+        alert("Mag-login muna.");
+        return;
+      }
+
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      const message = document.getElementById("storeMessage");
+      button.disabled = true;
+      message.textContent = "Sine-save ang tindahan...";
+
+      try {
+        const profile = {
+          user_id: currentUser.id,
+          store_name: document.getElementById("storeName").value.trim(),
+          contact_number: document.getElementById("storePhone").value.trim() || null
+        };
+
+        if (!profile.store_name) throw new Error("Ilagay ang pangalan ng tindahan.");
+
+        const { error } = await pinoyMartSupabase
+          .from("seller_profiles")
+          .upsert(profile, { onConflict: "user_id" });
+
+        if (error) throw error;
+        message.textContent = "Matagumpay na na-save ang impormasyon ng tindahan.";
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Hindi na-save: " + (error.message || "Pakisubukan muli.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    // PRODUCT SUBMISSION: lahat ng bagong produkto ay pending.
+    document.getElementById("productForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (!currentUser) {
+        alert("Mag-login muna.");
+        return;
+      }
+
+      const form = event.currentTarget;
+      const button = form.querySelector('button[type="submit"]');
+      const message = document.getElementById("productMessage");
+      button.disabled = true;
+      message.textContent = "Ipinapasa ang produkto...";
+
+      try {
+        const name = document.getElementById("productName").value.trim();
+        const description = document.getElementById("productDescription").value.trim();
+        const category = document.getElementById("productCategory").value;
+        const price = Number(document.getElementById("productPrice").value);
+        const stock = Number(document.getElementById("productStock").value);
+        const rawImage = document.getElementById("productImage").value.trim();
+        const imageUrl = rawImage ? safeImageUrl(rawImage) : null;
+
+        if (!name) throw new Error("Ilagay ang pangalan ng produkto.");
+        if (!Number.isFinite(price) || price <= 0) throw new Error("Hindi valid ang presyo.");
+        if (!Number.isInteger(stock) || stock < 0) throw new Error("Hindi valid ang stock.");
+        if (rawImage && !imageUrl) throw new Error("Ang link ng larawan ay kailangang magsimula sa https://.");
+
+        const { error } = await pinoyMartSupabase
+          .from("marketplace_products")
+          .insert({
+            seller_id: currentUser.id,
+            name,
+            description: description || null,
+            category,
+            price,
+            stock,
+            image_url: imageUrl,
+            approval_status: "pending"
+          });
+
+        if (error) throw error;
+
+        message.textContent =
+          "Naipasa ang produkto at naghihintay ng admin approval. Hindi pa ito nakikita sa shop.";
+        form.reset();
+        document.getElementById("productStock").value = "1";
+        await loadSellerProducts();
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Hindi naipasa ang produkto: " + (error.message || "Pakisubukan muli.");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    async function loadSellerProducts() {
+      if (!currentUser) return;
+
+      const container = document.getElementById("sellerProducts");
+      container.innerHTML = "<p>Kinukuha ang mga produkto...</p>";
+
+      const { data, error } = await pinoyMartSupabase
+        .from("marketplace_products")
+        .select("id,name,category,price,stock,approval_status,created_at")
+        .eq("seller_id", currentUser.id)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        container.innerHTML = "<p>Hindi makuha ang mga produkto. Suriin ang RLS policies.</p>";
+        return;
+      }
+
+      container.innerHTML = (data || []).map(p => `
+        <article class="card">
+          <h3>${escapeHtml(p.name)}</h3>
+          <p>${escapeHtml(p.category)}</p>
+          <p class="price">${money(p.price)}</p>
+          <p>Stock: ${Number(p.stock)}</p>
+          <p>Status: <span class="status">${escapeHtml(p.approval_status)}</span></p>
+        </article>
+      `).join("") || "<p>Wala ka pang naipapasang produkto.</p>";
+    }
+
+    // ADMIN APPROVAL: gumagamit ng secure RPC na ginawa sa Supabase SQL Editor.
+    document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
+    document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
+
+    async function loadAdminProducts() {
+      if (!currentUser || currentRole !== "admin") return;
+
+      const container = document.getElementById("adminProducts");
+      const message = document.getElementById("adminMessage");
+      container.innerHTML = "<p>Kinukuha ang listahan...</p>";
+      message.textContent = "";
+
+      try {
+        const status = document.getElementById("adminStatus").value;
+        const { data, error } = await pinoyMartSupabase.rpc(
+          "admin_list_marketplace_products",
+          { p_status: status }
+        );
+
+        if (error) throw error;
+
+        container.innerHTML = (data || []).map(p => {
+          const imageUrl = safeImageUrl(p.image_url);
+          const image = imageUrl
+            ? `<img class="product-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name)}" loading="lazy">`
+            : `<div class="emoji">🛍️</div>`;
+
+          const reviewButtons = status === "pending" ? `
+            <div class="product-actions">
+              <button class="primary" onclick="reviewProduct(${Number(p.id)},'approved')">Approve</button>
+              <button class="danger" onclick="reviewProduct(${Number(p.id)},'rejected')">Reject</button>
+            </div>
+          ` : "";
+
+          return `
+            <article class="card">
+              ${image}
+              <h3>${escapeHtml(p.name)}</h3>
+              <p>${escapeHtml(p.category)}</p>
+              <p>${escapeHtml(p.description || "")}</p>
+              <p class="price">${money(p.price)}</p>
+              <p>Stock: ${Number(p.stock)}</p>
+              <p>Status: <span class="status">${escapeHtml(p.approval_status)}</span></p>
+              <p class="notice">Seller ID: ${escapeHtml(p.seller_id)}</p>
+              ${reviewButtons}
+            </article>
+          `;
+        }).join("") || "<p>Walang produkto sa status na ito.</p>";
+      } catch (error) {
+        console.error(error);
+        container.innerHTML = "";
+        message.textContent =
+          "Hindi makuha ang admin list: " + (error.message || "Suriin ang admin role at RPC function.");
+      }
+    }
+
+    async function reviewProduct(id, status) {
+      if (!currentUser || currentRole !== "admin") {
+        alert("Admin lamang ang puwedeng mag-review.");
+        return;
+      }
+
+      const action = status === "approved" ? "aprubahan" : "tanggihan";
+      if (!confirm("Sigurado ka bang gusto mong " + action + " ang produktong ito?")) return;
+
+      const message = document.getElementById("adminMessage");
+      message.textContent = "Sine-save ang desisyon...";
+
+      try {
+        const { error } = await pinoyMartSupabase.rpc(
+          "review_marketplace_product",
+          { p_product_id: id, p_status: status }
+        );
+
+        if (error) throw error;
+
+        message.textContent = "Na-save ang desisyon: " + status + ".";
+        await loadAdminProducts();
+        await loadApprovedMarketplaceProducts();
+        await loadSellerProducts();
+      } catch (error) {
+        console.error(error);
+        message.textContent = "Hindi na-save ang desisyon: " + (error.message || "Pakisubukan muli.");
+      }
+    }
+
+    // CHECKOUT: pinananatili ang lumang checkout at hiwalay ang marketplace RPC.
     document.getElementById("orderForm").addEventListener("submit", async event => {
       event.preventDefault();
 
@@ -296,30 +912,49 @@
         return;
       }
 
-      // Kopyahin ang cart bago maghintay sa network.
       const submittedCart = cart.map(p => ({ ...p }));
       const total = submittedCart.reduce(
         (sum, p) => sum + Number(p.price) * Number(p.qty), 0
       );
+      const isMarketplace = submittedCart[0].kind === "marketplace";
 
       orderInProgress = true;
       button.disabled = true;
       message.textContent = "Sine-save ang order. Pakihintay...";
 
       try {
-        const { data, error } = await pinoyMartSupabase.rpc(
-          "submit_public_order",
-          {
-            p_customer_name: customerName,
-            p_phone: phone,
-            p_delivery_address: address,
-            p_payment_method: payment,
-            p_items: submittedCart.map(p => ({
-              product_id: p.id,
-              quantity: p.qty
-            }))
-          }
-        );
+        let data;
+        let error;
+
+        if (isMarketplace) {
+          ({ data, error } = await pinoyMartSupabase.rpc(
+            "submit_marketplace_order",
+            {
+              p_customer_name: customerName,
+              p_phone: phone,
+              p_delivery_address: address,
+              p_payment_method: payment,
+              p_items: submittedCart.map(p => ({
+                product_id: p.id,
+                quantity: p.qty
+              }))
+            }
+          ));
+        } else {
+          ({ data, error } = await pinoyMartSupabase.rpc(
+            "submit_public_order",
+            {
+              p_customer_name: customerName,
+              p_phone: phone,
+              p_delivery_address: address,
+              p_payment_method: payment,
+              p_items: submittedCart.map(p => ({
+                product_id: p.id,
+                quantity: p.qty
+              }))
+            }
+          ));
+        }
 
         if (error) throw error;
 
@@ -341,6 +976,9 @@
         renderCart();
         form.reset();
 
+        if (isMarketplace) {
+          await loadApprovedMarketplaceProducts();
+        }
       } catch (error) {
         console.error("Order error:", error);
         message.textContent =
@@ -353,8 +991,23 @@
       }
     });
 
-    renderProducts();
-    renderCart();
+    async function initializeShop() {
+      renderProducts();
+      renderCart();
+      await loadApprovedMarketplaceProducts();
+      await refreshAccount();
+    }
+
+    // I-update ang interface kapag nagbago ang login session.
+    pinoyMartSupabase.auth.onAuthStateChange(() => {
+      setTimeout(() => {
+        refreshAccount().catch(error => console.error("Account refresh:", error));
+      }, 0);
+    });
+
+    initializeShop().catch(error => {
+      console.error("Initialization error:", error);
+    });
   </script>
 </body>
 </html>
