@@ -517,10 +517,6 @@
     }
 
     function showCheckout() {
-      if (!cart.length) {
-        alert("Magdagdag muna ng produkto sa cart.");
-        return;
-      }
       const section = document.getElementById("checkout");
       section.hidden = false;
       section.scrollIntoView({ behavior: "smooth" });
