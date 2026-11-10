@@ -212,6 +212,29 @@
       <button class="secondary" id="refreshAdmin" type="button">I-refresh ang Listahan</button>
       <div id="adminMessage" class="feedback" role="status" aria-live="polite"></div>
       <div id="adminProducts" class="products"></div>
+      
+<hr style="margin: 24px 0;">
+
+<h2>📦 Mga Customer Order</h2>
+<div class="field">
+  <label for="adminOrderStatus">Salain ayon sa status</label>
+  <select id="adminOrderStatus">
+    <option value="all">Lahat ng Order</option>
+    <option value="Pending">Pending</option>
+    <option value="Processing">Processing</option>
+    <option value="Shipped">Shipped</option>
+    <option value="Delivered">Delivered</option>
+    <option value="Cancelled">Cancelled</option>
+  </select>
+</div>
+
+<button class="secondary" id="refreshAdminOrders" type="button">
+  I-refresh ang Orders
+</button>
+
+<div id="adminOrdersMessage" class="feedback" role="status" aria-live="polite"></div>
+<div id="adminOrders" class="products"></div>
+
     </section>
 
     <h2 class="section-title">Mga Produkto</h2>
@@ -647,12 +670,13 @@ async function refreshAccount() {
 
   currentRole = roleRow?.role || "buyer";
 
-  if (currentRole === "admin") {
-    document.getElementById("accountRole").textContent = "Role: Admin";
-    document.getElementById("adminPanel").classList.remove("hidden");
-    await loadAdminProducts();
-    return;
-  }
+if (currentRole === "admin") {
+  document.getElementById("accountRole").textContent = "Role: Admin";
+  document.getElementById("adminPanel").classList.remove("hidden");
+  await loadAdminProducts();
+  await loadAdminOrders();
+  return;
+}
 
   if (currentRole === "seller") {
     document.getElementById("accountRole").textContent = "Role: Seller";
@@ -1075,6 +1099,69 @@ if (!itemId || !select) {
         button.disabled = false;
       }
     });
+
+async function loadAdminOrders() {
+  if (!currentUser || currentRole !== "admin") return;
+
+  const container = document.getElementById("adminOrders");
+  const message = document.getElementById("adminOrdersMessage");
+  const button = document.getElementById("refreshAdminOrders");
+  const statusFilter = document.getElementById("adminOrderStatus");
+
+  if (!container || !message || !button || !statusFilter) {
+    console.error("Hindi makita ang Admin Orders elements.");
+    return;
+  }
+
+  button.disabled = true;
+  container.innerHTML = "<p>Kinukuha ang mga order...</p>";
+  message.textContent = "";
+
+  try {
+    let query = pinoyMartSupabase
+      .from("orders")
+      .select("id,customer_name,phone,delivery_address,payment_method,total_amount,status,created_at")
+      .order("created_at", { ascending: false });
+
+    if (statusFilter.value !== "all") {
+      query = query.eq("status", statusFilter.value);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const orders = data || [];
+
+    container.innerHTML = orders.map(order => `
+      <article class="card">
+        <h3>📦 Order</h3>
+        <p><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
+        <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+        <p><strong>Cellphone:</strong> ${escapeHtml(order.phone || "")}</p>
+        <p><strong>Delivery address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+        <p><strong>Payment:</strong> ${escapeHtml(order.payment_method || "")}</p>
+        <p><strong>Total:</strong> ${money(Number(order.total_amount) || 0)}</p>
+        <p><strong>Status:</strong> ${escapeHtml(order.status || "")}</p>
+        <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
+      </article>
+    `).join("") || "<p>Walang order sa napiling status.</p>";
+
+    message.textContent = "Matagumpay na nakuha ang mga order.";
+  } catch (error) {
+    console.error("Admin orders error:", error);
+    container.innerHTML = "";
+    message.textContent =
+      "Hindi makuha ang mga order: " + (error.message || "Pakisubukan muli.");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("refreshAdminOrders")
+  .addEventListener("click", loadAdminOrders);
+
+document.getElementById("adminOrderStatus")
+  .addEventListener("change", loadAdminOrders);
 
     // APPROVE OR REJECT PRODUCT
     async function reviewProduct(id, status) {
