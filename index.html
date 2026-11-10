@@ -1326,18 +1326,20 @@ document.getElementById("adminOrders").addEventListener("click", async event => 
           `${p.name} x ${p.qty} = ${money(p.price * p.qty)}`
         ).join("\n");
 
-        message.textContent =
-          "Matagumpay na na-save ang order request!\n\n" +
-          "Order ID: " + data +
-          "\nTracking Code: " + trackingToken +
-          "\n\nITAGO ANG TRACKING CODE NA ITO. " +
-          "Kakailanganin ito para tingnan ang status ng order." +
-          "\n\nPangalan: " + customerName +
-          "\nKabuuan: " + money(total) +
-          "\nBayad: " + payment +
-          "\nStatus: Pending" +
-          "\n\n" + summary +
-          "\n\nHindi pa ito kumpirmasyon ng bayad o pagpapadala.";
+message.textContent =
+  "✅ Matagumpay na na-save ang order request!\n\n" +
+  "Order ID: " + data +
+  "\nTracking Code: " + trackingToken +
+  "\n\n⚠️ MAHALAGA: Itago ang iyong Tracking Code. " +
+  "Kakailanganin ito para masubaybayan ang order." +
+  "\n\nPangalan: " + customerName +
+  "\nKabuuang halaga: " + money(total) +
+  "\nParaan ng bayad: " + payment +
+  "\nPaunang status: Pending" +
+  "\n\nPara makita ang pinakabagong status, gamitin ang " +
+  "Order ID at Tracking Code sa seksyong Subaybayan ang Order." +
+  "\n\nMga produkto:\n" + summary +
+  "\n\nPaalala: Hindi pa ito kumpirmasyon ng bayad o pagpapadala.";
 
         cart = [];
         renderCart();
