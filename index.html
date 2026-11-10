@@ -291,6 +291,31 @@
       <hr style="margin: 24px 0;">
 
       <h2>Subaybayan ang Order</h2>
+      
+<section id="buyerOrderHistory" class="hidden">
+  <hr style="margin: 24px 0;">
+
+  <h2>📦 Aking mga Order</h2>
+  <p>Dito mo makikita ang mga order na ginawa mo habang naka-login.</p>
+
+  <button
+    id="refreshBuyerOrders"
+    class="primary"
+    type="button"
+  >
+    I-refresh ang Aking mga Order
+  </button>
+
+  <div
+    id="buyerOrdersMessage"
+    role="status"
+    aria-live="polite"
+    style="white-space: pre-line; margin-top: 12px;"
+  ></div>
+
+  <div id="buyerOrdersList"></div>
+</section>
+
       <p>Ilagay ang Order ID at Tracking Code na ibinigay pagkatapos mag-order.</p>
 
       <form id="trackingForm">
@@ -644,6 +669,7 @@ async function refreshAccount() {
   document.getElementById("loggedInArea").classList.toggle("hidden", !currentUser);
   document.getElementById("sellerPanel").classList.add("hidden");
   document.getElementById("adminPanel").classList.add("hidden");
+  document.getElementById("buyerOrderHistory").classList.add("hidden");
 
   if (!currentUser) {
     document.getElementById("accountEmail").textContent = "";
@@ -687,6 +713,64 @@ if (currentRole === "admin") {
   }
 
   document.getElementById("accountRole").textContent = "Role: Buyer";
+    document.getElementById("buyerOrderHistory").classList.remove("hidden");
+  await loadBuyerOrders();
+}
+
+async function loadBuyerOrders() {
+  const message = document.getElementById("buyerOrdersMessage");
+  const list = document.getElementById("buyerOrdersList");
+
+  message.textContent = "Kinukuha ang iyong mga order...";
+  list.replaceChildren();
+
+  if (!currentUser) {
+    message.textContent = "Mag-login muna bilang Buyer.";
+    return;
+  }
+
+  const { data, error } = await pinoyMartSupabase
+    .from("orders")
+    .select("id, customer_name, total_amount, status, created_at, payment_method")
+    .eq("buyer_user_id", currentUser.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Buyer orders error:", error);
+    message.textContent = "Hindi makuha ang order history. Subukang muli.";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    message.textContent = "Wala pang order na naka-link sa account na ito.";
+    return;
+  }
+
+  message.textContent = `May ${data.length} order ka.`;
+
+  data.forEach(order => {
+    const card = document.createElement("div");
+    card.style.cssText =
+      "border:1px solid #ddd;border-radius:8px;padding:12px;margin:12px 0;";
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Order: " + order.id;
+
+    const details = document.createElement("p");
+    details.textContent =
+      "Pangalan: " + (order.customer_name || "—") +
+      "\nKabuuan: ₱" + Number(order.total_amount || 0).toFixed(2) +
+      "\nStatus: " + (order.status || "Pending") +
+      "\nBayad: " + (order.payment_method || "—") +
+      "\nPetsa: " +
+      (order.created_at
+        ? new Date(order.created_at).toLocaleString("en-PH")
+        : "—");
+
+    details.style.whiteSpace = "pre-line";
+    card.append(heading, details);
+    list.appendChild(card);
+  });
 }
 
     // SELLER PROFILE
@@ -971,7 +1055,48 @@ if (currentRole === "admin") {
     document.getElementById("adminStatus")
       .addEventListener("change", loadAdminProducts);
 
+async function loadBuyerOrders() {
+  const message = document.getElementById("buyerOrdersMessage");
+  const list = document.getElementById("buyerOrdersList");
 
+  if (!currentUser || currentRole !== "buyer") {
+    message.textContent = "Mag-login bilang Buyer upang makita ang iyong mga order.";
+    list.innerHTML = "";
+    return;
+  }
+
+  message.textContent = "Kinukuha ang iyong mga order...";
+  list.innerHTML = "";
+
+  const { data, error } = await pinoyMartSupabase
+    .from("orders")
+    .select("id, customer_name, total_amount, status, created_at, payment_method")
+    .eq("buyer_user_id", currentUser.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Buyer orders error:", error);
+    message.textContent = "Hindi makuha ang mga order. Pakisubukang muli.";
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    message.textContent = "Wala pang order na nakatala sa iyong Buyer account.";
+    return;
+  }
+
+  message.textContent = `May ${data.length} order kang nakita.`;
+
+  list.innerHTML = data.map(order => `
+    <div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-top:10px;">
+      <p><strong>Order ID:</strong> ${order.id}</p>
+      <p><strong>Petsa:</strong> ${new Date(order.created_at).toLocaleString("en-PH")}</p>
+      <p><strong>Kabuuan:</strong> ₱${Number(order.total_amount || 0).toLocaleString("en-PH", {minimumFractionDigits:2})}</p>
+      <p><strong>Paraan ng bayad:</strong> ${order.payment_method || "Hindi nakasaad"}</p>
+      <p><strong>Status:</strong> ${order.status || "Pending"}</p>
+    </div>
+  `).join("");
+}
     async function loadSellerOrders() {
       if (!currentUser) {
         alert("Mag-login muna.");
@@ -1240,7 +1365,10 @@ document.getElementById("adminOrders").addEventListener("click", async event => 
       }
     }
 
-   
+   // BUYER ORDER HISTORY BUTTON
+document.getElementById("refreshBuyerOrders").addEventListener("click", async () => {
+  await loadBuyerOrders();
+});
     // CHECKOUT
     document.getElementById("orderForm").addEventListener("submit", async event => {
       event.preventDefault();
