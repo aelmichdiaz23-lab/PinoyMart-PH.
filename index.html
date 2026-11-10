@@ -1132,7 +1132,6 @@ async function loadAdminOrders() {
 
     const orders = data || [];
 
-  
 container.innerHTML = orders.map(order => `
   <article class="card">
     <h3>📦 Order</h3>
@@ -1151,15 +1150,13 @@ container.innerHTML = orders.map(order => `
       `).join("")}
     </select>
 
-    <button type="button" class="secondary update-admin-order"
-      data-order-id="${escapeHtml(order.id)}">
+    <button type="button" class="secondary update-admin-order" data-order-id="${escapeHtml(order.id)}">
       I-save ang Status
     </button>
 
     <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
   </article>
 `).join("") || "<p>Walang order sa napiling status.</p>";
-
 
     message.textContent = "Matagumpay na nakuha ang mga order.";
   } catch (error) {
