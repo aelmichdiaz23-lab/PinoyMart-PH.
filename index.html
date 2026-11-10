@@ -1132,19 +1132,34 @@ async function loadAdminOrders() {
 
     const orders = data || [];
 
-    container.innerHTML = orders.map(order => `
-      <article class="card">
-        <h3>📦 Order</h3>
-        <p><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
-        <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-        <p><strong>Cellphone:</strong> ${escapeHtml(order.phone || "")}</p>
-        <p><strong>Delivery address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-        <p><strong>Payment:</strong> ${escapeHtml(order.payment_method || "")}</p>
-        <p><strong>Total:</strong> ${money(Number(order.total_amount) || 0)}</p>
-        <p><strong>Status:</strong> ${escapeHtml(order.status || "")}</p>
-        <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
-      </article>
-    `).join("") || "<p>Walang order sa napiling status.</p>";
+  
+container.innerHTML = orders.map(order => `
+  <article class="card">
+    <h3>📦 Order</h3>
+    <p><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
+    <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+    <p><strong>Cellphone:</strong> ${escapeHtml(order.phone || "")}</p>
+    <p><strong>Delivery address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+    <p><strong>Payment:</strong> ${escapeHtml(order.payment_method || "")}</p>
+    <p><strong>Total:</strong> ${money(Number(order.total_amount) || 0)}</p>
+    <p><strong>Kasalukuyang Status:</strong> ${escapeHtml(order.status || "")}</p>
+
+    <label for="admin-order-status-${escapeHtml(order.id)}">Bagong status:</label>
+    <select id="admin-order-status-${escapeHtml(order.id)}" class="admin-order-status">
+      ${["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].map(status => `
+        <option value="${status}" ${(order.status || "Pending") === status ? "selected" : ""}>${status}</option>
+      `).join("")}
+    </select>
+
+    <button type="button" class="secondary update-admin-order"
+      data-order-id="${escapeHtml(order.id)}">
+      I-save ang Status
+    </button>
+
+    <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
+  </article>
+`).join("") || "<p>Walang order sa napiling status.</p>";
+
 
     message.textContent = "Matagumpay na nakuha ang mga order.";
   } catch (error) {
@@ -1162,6 +1177,35 @@ document.getElementById("refreshAdminOrders")
 
 document.getElementById("adminOrderStatus")
   .addEventListener("change", loadAdminOrders);
+
+document.getElementById("adminOrders").addEventListener("click", async event => {
+  const button = event.target.closest(".update-admin-order");
+  if (!button) return;
+
+  const orderId = button.dataset.orderId;
+  const select = document.getElementById(`admin-order-status-${orderId}`);
+  const newStatus = select.value;
+
+  button.disabled = true;
+  button.textContent = "Sine-save...";
+
+  try {
+    const { error } = await pinoyMartSupabase
+      .from("orders")
+      .update({ status: newStatus })
+      .eq("id", orderId);
+
+    if (error) throw error;
+
+    alert("Matagumpay na na-update ang status ng order!");
+    await loadAdminOrders();
+  } catch (error) {
+    console.error("Update admin order error:", error);
+    alert("Hindi na-update ang status: " + (error.message || "Pakisubukan muli."));
+    button.disabled = false;
+    button.textContent = "I-save ang Status";
+  }
+});
 
     // APPROVE OR REJECT PRODUCT
     async function reviewProduct(id, status) {
