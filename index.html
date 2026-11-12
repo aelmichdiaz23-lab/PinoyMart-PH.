@@ -1257,31 +1257,73 @@ async function loadAdminOrders() {
 
     const orders = data || [];
 
-container.innerHTML = orders.map(order => `
-  <article class="card">
-    <h3>📦 Order</h3>
-    <p><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
-    <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-    <p><strong>Cellphone:</strong> ${escapeHtml(order.phone || "")}</p>
-    <p><strong>Delivery address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-    <p><strong>Payment:</strong> ${escapeHtml(order.payment_method || "")}</p>
-    <p><strong>Total:</strong> ${money(Number(order.total_amount) || 0)}</p>
-    <p><strong>Kasalukuyang Status:</strong> ${escapeHtml(order.status || "")}</p>
+    const orderIds = orders.map(order => order.id);
+    let itemsByOrder = {};
 
-    <label for="admin-order-status-${escapeHtml(order.id)}">Bagong status:</label>
-    <select id="admin-order-status-${escapeHtml(order.id)}" class="admin-order-status">
-      ${["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].map(status => `
-        <option value="${status}" ${(order.status || "Pending") === status ? "selected" : ""}>${status}</option>
-      `).join("")}
-    </select>
+    if (orderIds.length > 0) {
+      const { data: items, error: itemsError } = await pinoyMartSupabase
+        .from("order_items")
+        .select("order_id,product_name,quantity,unit_price,line_total")
+        .in("order_id", orderIds);
 
-    <button type="button" class="secondary update-admin-order" data-order-id="${escapeHtml(order.id)}">
-      I-save ang Status
-    </button>
+      if (itemsError) throw itemsError;
 
-    <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
-  </article>
-`).join("") || "<p>Walang order sa napiling status.</p>";
+      (items || []).forEach(item => {
+        if (!itemsByOrder[item.order_id]) {
+          itemsByOrder[item.order_id] = [];
+        }
+        itemsByOrder[item.order_id].push(item);
+      });
+    }
+
+    container.innerHTML = orders.map(order => {
+      const items = itemsByOrder[order.id] || [];
+
+      const itemsHtml = items.length
+        ? `
+          <h4>🛍️ Mga Produktong Binili</h4>
+          <ul>
+            ${items.map(item => `
+              <li>
+                <strong>${escapeHtml(item.product_name || "Produkto")}</strong>
+                — Dami: ${Number(item.quantity) || 0}
+                — Presyo: ${money(Number(item.unit_price) || 0)}
+                — Subtotal: ${money(Number(item.line_total) || 0)}
+              </li>
+            `).join("")}
+          </ul>
+        `
+        : "<p>Walang detalye ng produkto para sa order na ito.</p>";
+
+      return `
+        <article class="card">
+          <h3>📦 Order</h3>
+          <p><strong>Order ID:</strong> ${escapeHtml(order.id)}</p>
+          <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
+          <p><strong>Cellphone:</strong> ${escapeHtml(order.phone || "")}</p>
+          <p><strong>Delivery address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
+          <p><strong>Payment:</strong> ${escapeHtml(order.payment_method || "")}</p>
+
+          ${itemsHtml}
+
+          <p><strong>Total:</strong> ${money(Number(order.total_amount) || 0)}</p>
+          <p><strong>Kasalukuyang Status:</strong> ${escapeHtml(order.status || "")}</p>
+
+          <label for="admin-order-status-${escapeHtml(order.id)}">Bagong status:</label>
+          <select id="admin-order-status-${escapeHtml(order.id)}" class="admin-order-status">
+            ${["Pending", "Processing", "Shipped", "Delivered", "Cancelled"].map(status => `
+              <option value="${status}" ${(order.status || "Pending") === status ? "selected" : ""}>${status}</option>
+            `).join("")}
+          </select>
+
+          <button type="button" class="secondary update-admin-order" data-order-id="${escapeHtml(order.id)}">
+            I-save ang Status
+          </button>
+
+          <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
+        </article>
+      `;
+    }).join("") || "<p>Walang order sa napiling status.</p>";
 
     message.textContent = "Matagumpay na nakuha ang mga order.";
   } catch (error) {
