@@ -1557,7 +1557,7 @@ message.textContent =
 
       try {
         const { data, error } = await pinoyMartSupabase.rpc(
-          "track_guest_order",
+          "track_guest_order_with_items",
           {
             p_order_id: orderId,
             p_tracking_token: trackingToken
@@ -1577,12 +1577,24 @@ message.textContent =
           ? new Date(order.created_at).toLocaleString("fil-PH")
           : "Hindi available";
 
-        message.textContent =
-          "Nahanap ang order!\n\n" +
-          "Order ID: " + order.order_id +
-          "\nStatus: " + order.status +
-          "\nKabuuan: " + money(Number(order.total_amount)) +
-          "\nPetsa ng order: " + createdDate;
+
+const itemDetails = Array.isArray(order.items)
+  ? order.items.map(item =>
+      "\n\nProdukto: " + (item.product_name || "Hindi available") +
+      "\nDami: " + item.quantity +
+      "\nHalaga: " + money(Number(item.line_total || 0)) +
+      "\nStatus ng produkto: " + (item.seller_status || "Pending")
+    ).join("")
+  : "";
+
+message.textContent =
+  "Nahanap ang order!\n\n" +
+  "Order ID: " + order.order_id +
+  "\nStatus ng order: " + order.status +
+  "\nKabuuan: " + money(Number(order.total_amount)) +
+  "\nPetsa ng order: " + createdDate +
+  itemDetails;
+
       } catch (error) {
         console.error("Order tracking error:", error);
         message.textContent =
