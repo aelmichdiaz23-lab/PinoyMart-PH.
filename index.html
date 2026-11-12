@@ -1160,13 +1160,13 @@ async function loadBuyerOrders() {
               <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
               <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
               <p><strong>Status ng produkto mo:</strong> ${escapeHtml(item.seller_status || "Pending")}</p>
-              <label for="seller-status-${Number(item.id)}">Bagong status:</label>
-              <select id="seller-status-${Number(item.id)}" class="seller-order-status">
+              <label for="seller-status-${item.id}">Bagong status:</label>
+              <select id="seller-status-${item.id}" class="seller-order-status">
                 ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"].map(status => `
                   <option value="${status}" ${(item.seller_status || "Pending") === status ? "selected" : ""}>${status}</option>
                 `).join("")}
               </select>
-              <button type="button" class="secondary update-seller-order-status" data-item-id="${Number(item.id)}">I-update ang Status</button>
+              <button type="button" class="secondary update-seller-order-status" data-item-id="${item.id}">I-update ang Status</button>
               <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
             </article>
           `;
