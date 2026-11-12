@@ -343,9 +343,15 @@
           >
         </div>
 
-        <button class="primary" type="submit">
-          Tingnan ang Status
-        </button>
+
+<button class="primary" type="submit">
+  Tingnan ang Status
+</button>
+
+<button class="secondary" id="refreshTrackingButton" type="button">
+  🔄 I-refresh ang Status
+</button>
+
       </form>
 
       <div
@@ -1602,6 +1608,16 @@ message.textContent =
       } finally {
         button.disabled = false;
       }
+    });
+
+    document.getElementById("refreshTrackingButton").addEventListener("click", () => {
+      const trackingForm = document.getElementById("trackingForm");
+
+      if (!trackingForm.reportValidity()) {
+        return;
+      }
+
+      trackingForm.requestSubmit();
     });
 
     async function initializeShop() {
