@@ -1540,6 +1540,10 @@ message.textContent =
 
     
     // GUEST ORDER TRACKING
+    
+    let trackingAutoRefreshTimer = null;
+    let trackingAutoRefreshEnabled = false;
+
     document.getElementById("trackingForm").addEventListener("submit", async event => {
       event.preventDefault();
 
@@ -1600,7 +1604,18 @@ message.textContent =
   "\nKabuuan: " + money(Number(order.total_amount)) +
   "\nPetsa ng order: " + createdDate +
   itemDetails;
+trackingAutoRefreshEnabled = true;
+        clearInterval(trackingAutoRefreshTimer);
 
+        trackingAutoRefreshTimer = setInterval(() => {
+          const trackingForm = document.getElementById("trackingForm");
+          const submitButton = trackingForm.querySelector('button[type="submit"]');
+
+          if (trackingAutoRefreshEnabled && !submitButton.disabled) {
+            trackingForm.requestSubmit();
+          }
+        }, 10000);
+        
       } catch (error) {
         console.error("Order tracking error:", error);
         message.textContent =
