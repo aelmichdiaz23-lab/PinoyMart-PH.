@@ -1061,7 +1061,6 @@ async function loadBuyerOrders() {
     document.getElementById("adminStatus")
       .addEventListener("change", loadAdminProducts);
 
-
 async function loadBuyerOrders() {
   const message = document.getElementById("buyerOrdersMessage");
   const list = document.getElementById("buyerOrdersList");
@@ -1087,6 +1086,7 @@ async function loadBuyerOrders() {
         id,
         product_name,
         quantity,
+        unit_price,
         line_total,
         seller_status
       )
@@ -1112,18 +1112,15 @@ async function loadBuyerOrders() {
   data.forEach(order => {
     const card = document.createElement("div");
     card.style.cssText =
-      "border:1px solid #ddd;border-radius:8px;" +
-      "padding:12px;margin:12px 0;";
+      "border:1px solid #ddd;border-radius:8px;padding:12px;margin:12px 0;";
 
     const heading = document.createElement("h3");
-    heading.textContent = "📦 Order: " + order.id;
+    heading.textContent = "Order: " + order.id;
 
     const details = document.createElement("p");
-    details.style.whiteSpace = "pre-line";
     details.textContent =
       "Pangalan: " + (order.customer_name || "—") +
-      "\nKabuuan: ₱" +
-      Number(order.total_amount || 0).toFixed(2) +
+      "\nKabuuan: ₱" + Number(order.total_amount || 0).toFixed(2) +
       "\nStatus ng order: " + (order.status || "Pending") +
       "\nBayad: " + (order.payment_method || "—") +
       "\nPetsa: " +
@@ -1131,43 +1128,47 @@ async function loadBuyerOrders() {
         ? new Date(order.created_at).toLocaleString("en-PH")
         : "—");
 
+    details.style.whiteSpace = "pre-line";
     card.append(heading, details);
 
-    const itemsHeading = document.createElement("h4");
-    itemsHeading.textContent = "Mga Produkto";
-    card.appendChild(itemsHeading);
+    const productsHeading = document.createElement("h4");
+    productsHeading.textContent = "📦 Mga Produkto";
+    card.appendChild(productsHeading);
 
     const items = order.order_items || [];
 
     if (items.length === 0) {
       const noItems = document.createElement("p");
-      noItems.textContent =
-        "Walang detalye ng produkto para sa order na ito.";
+      noItems.textContent = "Walang detalye ng produkto sa order na ito.";
       card.appendChild(noItems);
     } else {
       items.forEach(item => {
-        const itemBox = document.createElement("div");
-        itemBox.style.cssText =
+        const product = document.createElement("div");
+        product.style.cssText =
           "border-top:1px solid #eee;padding:10px 0;";
 
-        const product = document.createElement("p");
-        product.textContent =
-          "Produkto: " + (item.product_name || "Hindi nakasaad") +
-          "\nDami: " + Number(item.quantity || 0) +
-          "\nHalaga: ₱" + Number(item.line_total || 0).toFixed(2) +
+        const productName = document.createElement("strong");
+        productName.textContent = item.product_name || "Produkto";
+
+        const productDetails = document.createElement("p");
+        productDetails.style.whiteSpace = "pre-line";
+        productDetails.textContent =
+          "Dami: " + Number(item.quantity || 0) +
+          "\nPresyo bawat isa: ₱" +
+          Number(item.unit_price || 0).toFixed(2) +
+          "\nHalaga: ₱" +
+          Number(item.line_total || 0).toFixed(2) +
           "\nStatus ng produkto: " +
           (item.seller_status || "Pending");
-        product.style.whiteSpace = "pre-line";
 
-        itemBox.appendChild(product);
-        card.appendChild(itemBox);
+        product.append(productName, productDetails);
+        card.appendChild(product);
       });
     }
 
     list.appendChild(card);
   });
 }
-
 
     // UPDATE SELLER ORDER STATUS
     document.getElementById("sellerOrders").addEventListener("click", async event => {
