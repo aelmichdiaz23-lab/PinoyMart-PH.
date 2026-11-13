@@ -1061,132 +1061,113 @@ async function loadBuyerOrders() {
     document.getElementById("adminStatus")
       .addEventListener("change", loadAdminProducts);
 
+
 async function loadBuyerOrders() {
   const message = document.getElementById("buyerOrdersMessage");
   const list = document.getElementById("buyerOrdersList");
 
-  if (!currentUser || currentRole !== "buyer") {
-    message.textContent = "Mag-login bilang Buyer upang makita ang iyong mga order.";
-    list.innerHTML = "";
+  message.textContent = "Kinukuha ang iyong mga order...";
+  list.replaceChildren();
+
+  if (!currentUser) {
+    message.textContent = "Mag-login muna bilang Buyer.";
     return;
   }
 
-  message.textContent = "Kinukuha ang iyong mga order...";
-  list.innerHTML = "";
-
   const { data, error } = await pinoyMartSupabase
     .from("orders")
-    .select("id, customer_name, total_amount, status, created_at, payment_method")
+    .select(`
+      id,
+      customer_name,
+      total_amount,
+      status,
+      created_at,
+      payment_method,
+      order_items (
+        id,
+        product_name,
+        quantity,
+        line_total,
+        seller_status
+      )
+    `)
     .eq("buyer_user_id", currentUser.id)
     .order("created_at", { ascending: false });
 
   if (error) {
     console.error("Buyer orders error:", error);
-    message.textContent = "Hindi makuha ang mga order. Pakisubukang muli.";
+    message.textContent =
+      "Hindi makuha ang order history. Subukang muli.";
     return;
   }
 
   if (!data || data.length === 0) {
-    message.textContent = "Wala pang order na nakatala sa iyong Buyer account.";
+    message.textContent =
+      "Wala pang order na naka-link sa account na ito.";
     return;
   }
 
-  message.textContent = `May ${data.length} order kang nakita.`;
+  message.textContent = `May ${data.length} order ka.`;
 
-  list.innerHTML = data.map(order => `
-    <div style="border:1px solid #ddd; border-radius:8px; padding:12px; margin-top:10px;">
-      <p><strong>Order ID:</strong> ${order.id}</p>
-      <p><strong>Petsa:</strong> ${new Date(order.created_at).toLocaleString("en-PH")}</p>
-      <p><strong>Kabuuan:</strong> ₱${Number(order.total_amount || 0).toLocaleString("en-PH", {minimumFractionDigits:2})}</p>
-      <p><strong>Paraan ng bayad:</strong> ${order.payment_method || "Hindi nakasaad"}</p>
-      <p><strong>Status:</strong> ${order.status || "Pending"}</p>
-    </div>
-  `).join("");
-}
-    async function loadSellerOrders() {
-      if (!currentUser) {
-        alert("Mag-login muna.");
-        return;
-      }
+  data.forEach(order => {
+    const card = document.createElement("div");
+    card.style.cssText =
+      "border:1px solid #ddd;border-radius:8px;" +
+      "padding:12px;margin:12px 0;";
 
-      const container = document.getElementById("sellerOrders");
-      const message = document.getElementById("sellerOrdersMessage");
-      const button = document.getElementById("loadSellerOrdersButton");
+    const heading = document.createElement("h3");
+    heading.textContent = "📦 Order: " + order.id;
 
-      button.disabled = true;
-      container.innerHTML = "<p>Kinukuha ang mga order...</p>";
-      message.textContent = "";
+    const details = document.createElement("p");
+    details.style.whiteSpace = "pre-line";
+    details.textContent =
+      "Pangalan: " + (order.customer_name || "—") +
+      "\nKabuuan: ₱" +
+      Number(order.total_amount || 0).toFixed(2) +
+      "\nStatus ng order: " + (order.status || "Pending") +
+      "\nBayad: " + (order.payment_method || "—") +
+      "\nPetsa: " +
+      (order.created_at
+        ? new Date(order.created_at).toLocaleString("en-PH")
+        : "—");
 
-      try {
-        const { data, error } = await pinoyMartSupabase
-          .from("order_items")
-          .select(`
-            order_id,
-            product_name,
-            quantity,
-            line_total,
-            marketplace_product_id,
-            seller_status,
-            id,
-            orders (
-              customer_name,
-              phone,
-              delivery_address,
-              payment_method,
-              status,
-              created_at
-            )
-          `)
-          .eq("seller_id", currentUser.id)
-          .not("marketplace_product_id", "is", null);
+    card.append(heading, details);
 
-        if (error) throw error;
+    const itemsHeading = document.createElement("h4");
+    itemsHeading.textContent = "Mga Produkto";
+    card.appendChild(itemsHeading);
 
-        const items = data || [];
-        if (items.length === 0) {
-          container.innerHTML = "<p>Wala ka pang order para sa iyong mga produkto.</p>";
-          message.textContent = "Matagumpay na nakuha ang mga order.";
-          return;
-        }
+    const items = order.order_items || [];
 
-        container.innerHTML = items.map(item => {
-          const order = Array.isArray(item.orders) ? item.orders[0] : item.orders;
-          if (!order) return "";
+    if (items.length === 0) {
+      const noItems = document.createElement("p");
+      noItems.textContent =
+        "Walang detalye ng produkto para sa order na ito.";
+      card.appendChild(noItems);
+    } else {
+      items.forEach(item => {
+        const itemBox = document.createElement("div");
+        itemBox.style.cssText =
+          "border-top:1px solid #eee;padding:10px 0;";
 
-          return `
-            <article class="card">
-              <h3>📦 Order #${escapeHtml(item.order_id)}</h3>
-              <p><strong>Produkto:</strong> ${escapeHtml(item.product_name || "")}</p>
-              <p><strong>Dami:</strong> ${Number(item.quantity) || 0}</p>
-              <p><strong>Halaga:</strong> ${money(Number(item.line_total) || 0)}</p>
-              <hr>
-              <p><strong>Customer:</strong> ${escapeHtml(order.customer_name || "")}</p>
-              <p><strong>Contact:</strong> ${escapeHtml(order.phone || "")}</p>
-              <p><strong>Address:</strong> ${escapeHtml(order.delivery_address || "")}</p>
-              <p><strong>Bayad:</strong> ${escapeHtml(order.payment_method || "")}</p>
-              <p><strong>Status ng order:</strong> ${escapeHtml(order.status || "")}</p>
-              <p><strong>Status ng produkto mo:</strong> ${escapeHtml(item.seller_status || "Pending")}</p>
-              <label for="seller-status-${item.id}">Bagong status:</label>
-              <select id="seller-status-${item.id}" class="seller-order-status">
-                ${["Pending", "Processing", "Shipped", "Completed", "Cancelled"].map(status => `
-                  <option value="${status}" ${(item.seller_status || "Pending") === status ? "selected" : ""}>${status}</option>
-                `).join("")}
-              </select>
-              <button type="button" class="secondary update-seller-order-status" data-item-id="${item.id}">I-update ang Status</button>
-              <p><strong>Petsa:</strong> ${order.created_at ? escapeHtml(new Date(order.created_at).toLocaleString("fil-PH")) : "Walang petsa"}</p>
-            </article>
-          `;
-        }).join("");
+        const product = document.createElement("p");
+        product.textContent =
+          "Produkto: " + (item.product_name || "Hindi nakasaad") +
+          "\nDami: " + Number(item.quantity || 0) +
+          "\nHalaga: ₱" + Number(item.line_total || 0).toFixed(2) +
+          "\nStatus ng produkto: " +
+          (item.seller_status || "Pending");
+        product.style.whiteSpace = "pre-line";
 
-        message.textContent = "Matagumpay na nakuha ang mga order.";
-      } catch (error) {
-        console.error("Load seller orders error:", error);
-        container.innerHTML = "";
-        message.textContent = "Hindi makuha ang mga order: " + (error.message || "Pakisubukan muli.");
-      } finally {
-        button.disabled = false;
-      }
+        itemBox.appendChild(product);
+        card.appendChild(itemBox);
+      });
     }
+
+    list.appendChild(card);
+  });
+}
+
 
     // UPDATE SELLER ORDER STATUS
     document.getElementById("sellerOrders").addEventListener("click", async event => {
