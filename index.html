@@ -989,16 +989,136 @@ async function loadBuyerOrders() {
     document.getElementById("refreshAdmin").addEventListener("click", loadAdminProducts);
     document.getElementById("adminStatus").addEventListener("change", loadAdminProducts);
 
-
     // SELLER ORDERS
+    async function loadSellerOrders() {
+      const container = document.getElementById("sellerOrders");
+      const message = document.getElementById("sellerOrdersMessage");
+      const button = document.getElementById("loadSellerOrdersButton");
+
+      if (!container || !message) {
+        console.error("Hindi makita ang Seller Orders elements.");
+        return;
+      }
+
+      if (!currentUser) {
+        message.textContent = "Mag-login muna bilang Seller.";
+        container.replaceChildren();
+        return;
+      }
+
+      if (currentRole !== "seller") {
+        message.textContent = "Seller account lamang ang makakakita nito.";
+        container.replaceChildren();
+        return;
+      }
+
+      if (button) button.disabled = true;
+      message.textContent = "Kinukuha ang iyong mga order...";
+      container.replaceChildren();
+
+      try {
+        const { data, error } = await pinoyMartSupabase
+          .from("order_items")
+          .select(`
+            id,
+            order_id,
+            product_name,
+            quantity,
+            line_total,
+            marketplace_product_id,
+            seller_status,
+            orders (
+              customer_name,
+              phone,
+              delivery_address,
+              payment_method,
+              status,
+              created_at
+            )
+          `)
+          .eq("seller_id", currentUser.id)
+          .not("marketplace_product_id", "is", null)
+          .order("order_id", { ascending: false });
+
+        if (error) throw error;
+
+        const items = data || [];
+
+        if (items.length === 0) {
+          message.textContent = "Wala ka pang order para sa iyong mga produkto.";
+          return;
+        }
+
+        items.forEach(item => {
+          const order = item.orders || {};
+          const card = document.createElement("article");
+
+          card.style.cssText =
+            "border:1px solid #ddd;border-radius:8px;padding:12px;margin:12px 0;";
+
+          const heading = document.createElement("h3");
+          heading.textContent = "📦 Order: " + item.order_id;
+
+          const details = document.createElement("p");
+          details.style.whiteSpace = "pre-line";
+          details.textContent =
+            "Produkto: " + (item.product_name || "Hindi nakasaad") +
+            "\nDami: " + Number(item.quantity || 0) +
+            "\nKabuuan ng produktong ito: ₱" +
+              Number(item.line_total || 0).toFixed(2) +
+            "\nCustomer: " + (order.customer_name || "—") +
+            "\nCellphone: " + (order.phone || "—") +
+            "\nDelivery address: " + (order.delivery_address || "—") +
+            "\nParaan ng bayad: " + (order.payment_method || "—") +
+            "\nStatus ng order: " + (order.status || "Pending") +
+            "\nPetsa: " +
+              (order.created_at
+                ? new Date(order.created_at).toLocaleString("fil-PH")
+                : "—");
+
+          const statusLabel = document.createElement("label");
+          statusLabel.htmlFor = "seller-status-" + item.id;
+          statusLabel.textContent = "Status ng iyong produkto:";
+
+          const statusSelect = document.createElement("select");
+          statusSelect.id = "seller-status-" + item.id;
+
+          ["Pending", "Processing", "Shipped", "Completed", "Cancelled"]
+            .forEach(status => {
+              const option = document.createElement("option");
+              option.value = status;
+              option.textContent = status;
+              option.selected = (item.seller_status || "Pending") === status;
+              statusSelect.appendChild(option);
+            });
+
+          const updateButton = document.createElement("button");
+          updateButton.type = "button";
+          updateButton.className = "secondary update-seller-order-status";
+          updateButton.dataset.itemId = item.id;
+          updateButton.textContent = "I-save ang Status";
+
+          card.append(heading, details, statusLabel, statusSelect, updateButton);
+          container.appendChild(card);
+        });
+
+        message.textContent = "Matagumpay na nakuha ang " +
+          items.length + " order item(s).";
+      } catch (error) {
+        console.error("Seller orders error:", error);
+        message.textContent =
+          "Hindi makuha ang mga order: " +
+          (error.message || "Pakisubukan muli.");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
     document.getElementById("loadSellerOrdersButton")
       .addEventListener("click", loadSellerOrders);
 
     // ADMIN PRODUCTS
     async function loadAdminProducts() {
-      if (!currentUser || currentRole !== "admin") {
-        return;
-      }
 
       const container = document.getElementById("adminProducts");
       const message = document.getElementById("adminMessage");
